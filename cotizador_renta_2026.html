@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cotizador Renta 2026 — Cano Herrera Asesorías SAS</title>
+<style>
+  /* ===================== PALETA (colores del logo Cano Herrera) ===================== */
+  :root{
+    --navy:#08264E;        /* azul marino del monograma (tinta) */
+    --navy-deep:#06192F;   /* navy casi negro para el panel de liquidación */
+    --navy-soft:#0E3A6B;   /* navy medio */
+    --gold:#C4923A;        /* dorado de la flecha (acento, con moderación) */
+    --gold-light:#D9A94B;  /* dorado claro */
+    --gold-pale:#F1E6CE;   /* dorado muy suave (fondos) */
+    --gold-soft:#E9D3A0;   /* filete dorado */
+    --gris:#5A6675;        /* gris de las barras */
+    --fondo:#F6F4EF;       /* papel cálido (papelería contable) */
+    --texto:#1B2536;       /* tinta casi negra */
+    --ink-soft:#4A5566;    /* texto secundario */
+    --exito:#2E7D5B;       /* verde sobrio */
+    --error:#C0392B;       /* rojo */
+    --linea:#E7E1D4;       /* hairline sobre papel */
+    --gris-medio:#9AA5B4;
+    --gris-oscuro:#55606E;
+    --serif:Georgia,"Times New Roman",serif;
+    --mono:"SFMono-Regular",ui-monospace,"Cascadia Mono","Consolas",monospace; /* cifras tabulares */
+  }
+  /* Marca de rombo (◆) tomada del lockup del logo */
+  .rombo{color:var(--gold)}
+  /* Accesibilidad: foco visible dorado */
+  :focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-radius:6px}
+  input.txt:focus-visible{outline:none}
+  /* Respeta reduce-motion */
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important}
+  }
+
+  /* ===================== RESET Y BASE ===================== */
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:var(--fondo);color:var(--texto);line-height:1.55;padding-bottom:230px;
+  }
+  .contenedor{max-width:1120px;margin:0 auto;padding:16px}
+
+  /* ===================== LAYOUT DE DOS COLUMNAS (escritorio) ===================== */
+  .app{display:block}
+  .col-side{margin-top:26px}
+  @media (min-width:920px){
+    body{padding-bottom:40px}
+    .app{
+      display:grid;gap:30px;align-items:start;
+      grid-template-columns:minmax(0,1fr) 340px;
+      grid-template-areas:"preguntas side" "contrato side";
+    }
+    .col-preguntas{grid-area:preguntas;min-width:0}
+    .col-side{grid-area:side;margin-top:0;position:sticky;top:16px}
+    .col-contrato{grid-area:contrato;min-width:0}
+    .col-preguntas .seccion:first-child{margin-top:0}
+    /* preguntas en 2 columnas dentro de cada renta */
+    .preguntas-grid{grid-template-columns:1fr 1fr}
+    .preguntas-grid .pregunta.columna{grid-column:1 / -1}
+  }
+  /* En móvil la liquidación queda fija abajo, siempre visible */
+  @media (max-width:919px){
+    .col-side{position:sticky;bottom:14px;z-index:60}
+    .precio-sticky{max-height:46vh;overflow-y:auto}
+  }
+
+  /* ===================== PANEL POR RENTA ===================== */
+  .ayuda{font-size:13.5px;color:var(--ink-soft);margin:0 2px 14px;max-width:640px}
+  .ayuda strong{color:var(--navy)}
+  .renta{
+    background:#fff;border:1px solid var(--linea);border-radius:16px;padding:20px;margin-bottom:16px;
+    box-shadow:0 1px 3px rgba(27,37,54,.05),0 10px 26px rgba(27,37,54,.05);
+    position:relative;
+  }
+  .renta.titular{border-left:4px solid var(--gold)}
+  .renta-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--linea);cursor:pointer;user-select:none}
+  .renta-chevron{
+    flex:0 0 auto;width:26px;height:26px;border:1px solid var(--linea);border-radius:8px;background:#fff;
+    display:flex;align-items:center;justify-content:center;color:var(--navy);font-size:12px;
+    transition:transform .22s ease, border-color .18s;
+  }
+  .renta-head:hover .renta-chevron{border-color:var(--gold)}
+  .renta.colapsada .renta-chevron{transform:rotate(-90deg)}
+  .renta.colapsada .renta-head{margin-bottom:0;padding-bottom:0;border-bottom:none}
+  .renta.colapsada .renta-body{display:none}
+  .renta.colapsada .renta-completa{display:inline-flex}
+  .renta-completa{display:none;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.5px;
+    color:var(--exito);background:#EAF4EF;border-radius:20px;padding:3px 10px}
+  .renta-completa.incompleta{color:#8A6D1E;background:#F5ECD3}
+  .renta-tag{
+    font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);
+    display:flex;align-items:center;gap:7px;
+  }
+  .renta-tag .rombo{font-size:8px}
+  .renta-sub{margin-left:auto;text-align:right;font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1}
+  .renta-sub .bruto{color:var(--gris-medio);text-decoration:line-through;font-size:12px;margin-right:6px}
+  .renta-sub .neto{font-family:var(--serif);font-size:19px;color:var(--navy)}
+  .renta-quitar{
+    background:none;border:1px solid var(--linea);color:var(--gris-oscuro);border-radius:8px;
+    padding:6px 12px;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .18s;
+  }
+  .renta-quitar:hover{border-color:var(--error);color:var(--error)}
+  .sub-eyebrow{font-size:10.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gris);margin:16px 2px 10px}
+  .sub-eyebrow:first-of-type{margin-top:4px}
+  .preguntas-grid{display:grid;grid-template-columns:1fr;gap:12px}
+  .renta-id{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:4px}
+  @media (min-width:560px){ .renta-id{grid-template-columns:1fr 1fr} .renta-id .full{grid-column:1 / -1} }
+
+  /* Botón agregar renta */
+  .btn-agregar{
+    width:100%;padding:15px;border:2px dashed var(--gold);border-radius:14px;background:rgba(196,146,58,.05);
+    color:var(--navy);font-size:14.5px;font-weight:700;cursor:pointer;transition:all .18s;
+  }
+  .btn-agregar:hover{background:rgba(196,146,58,.12)}
+  .btn-agregar:disabled{opacity:.5;cursor:not-allowed}
+
+  /* Select de parentesco */
+  select.txt{
+    width:100%;padding:13px 15px;font-size:15px;border:1.5px solid var(--linea);border-radius:10px;
+    background:#FBFCFE;color:var(--texto);cursor:pointer;
+  }
+  select.txt:focus{outline:none;border-color:var(--navy-soft);box-shadow:0 0 0 3px rgba(14,58,107,.12)}
+
+  /* Línea de descuento en la liquidación */
+  .precio-sticky .linea.descuento span{color:var(--gold-light)!important}
+
+  /* ===================== HEADER ===================== */
+  header.hero{
+    background:var(--navy-deep);color:#fff;text-align:center;padding:38px 20px 30px;position:relative;
+  }
+  header.hero::after{ /* filete dorado inferior estilo membrete */
+    content:"";position:absolute;left:0;right:0;bottom:0;height:3px;
+    background:linear-gradient(90deg,transparent,var(--gold),transparent);
+  }
+  .logo-card{
+    display:inline-block;background:#fff;border-radius:14px;padding:16px 22px;
+    box-shadow:0 12px 34px rgba(0,0,0,.34);margin-bottom:22px;
+  }
+  .logo-card img{display:block;max-width:220px;width:100%;height:auto}
+  .hero-eyebrow{
+    font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--gold-light);
+    font-weight:600;margin-bottom:12px;
+  }
+  header.hero h1{
+    font-family:var(--serif);font-weight:400;font-size:27px;line-height:1.2;
+    letter-spacing:.4px;color:#fff;margin-bottom:16px;
+  }
+  /* Divisor de rombo (◆) — tomado del lockup del logo */
+  .diamante{display:flex;align-items:center;justify-content:center;gap:14px;color:var(--gold);font-size:11px}
+  .diamante::before,.diamante::after{content:"";height:1px;width:52px}
+  .diamante::before{background:linear-gradient(90deg,transparent,var(--gold-soft))}
+  .diamante::after{background:linear-gradient(90deg,var(--gold-soft),transparent)}
+  header.hero .sub{font-size:12.5px;color:#B9C4D4;letter-spacing:.3px;margin-top:16px;max-width:460px;margin-left:auto;margin-right:auto}
+
+  /* ===================== SECCIONES Y CARDS ===================== */
+  .seccion{margin-top:30px}
+  .seccion-eyebrow{
+    font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:var(--gold);
+    font-weight:700;margin:0 2px 6px;display:flex;align-items:center;gap:8px;
+  }
+  .seccion-eyebrow .rombo{font-size:8px}
+  .seccion-titulo{
+    font-family:var(--serif);font-size:21px;font-weight:400;color:var(--navy);
+    margin:0 2px 16px;letter-spacing:.2px;
+  }
+  .card{
+    background:#fff;border-radius:14px;padding:22px;
+    box-shadow:0 1px 3px rgba(27,37,54,.05),0 8px 24px rgba(27,37,54,.05);
+    margin-bottom:14px;border:1px solid var(--linea);
+  }
+
+  /* ===================== CAMPOS DE TEXTO ===================== */
+  label.campo{display:block;font-weight:600;font-size:14px;margin-bottom:6px;color:var(--navy)}
+  input.txt{
+    width:100%;padding:13px 15px;font-size:15px;border:1.5px solid var(--linea);
+    border-radius:10px;background:#FBFCFE;color:var(--texto);transition:border-color .2s,box-shadow .2s;
+  }
+  input.txt:focus{outline:none;border-color:var(--navy-soft);box-shadow:0 0 0 3px rgba(14,58,107,.12)}
+  .campo-grupo{margin-bottom:16px}.campo-grupo:last-child{margin-bottom:0}
+  .msg-cliente{margin-top:12px;padding:12px 14px;border-radius:10px;font-size:14px;display:none}
+  .msg-cliente.existente{background:#EAF4EF;color:#1E6B49;border-left:4px solid var(--exito)}
+  .msg-cliente.nuevo{background:#EAF1F9;color:var(--navy);border-left:4px solid var(--navy-soft)}
+  .error-txt{color:var(--error);font-size:13px;margin-top:5px;display:none}
+
+  /* ===================== PREGUNTAS SI/NO ===================== */
+  .pregunta{
+    background:#fff;border-radius:14px;padding:18px;
+    box-shadow:0 1px 3px rgba(27,37,54,.05),0 8px 24px rgba(27,37,54,.05);
+    margin-bottom:13px;border:1px solid var(--linea);display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  }
+  .pregunta .icono{
+    font-size:21px;flex-shrink:0;width:44px;height:44px;display:flex;align-items:center;justify-content:center;
+    background:var(--fondo);border:1px solid var(--linea);border-radius:11px;
+  }
+  .pregunta .texto{flex:1;min-width:180px;font-size:14.5px;font-weight:600;color:var(--texto)}
+  .toggle{display:flex;gap:8px;flex-shrink:0}
+  .toggle button{
+    padding:11px 22px;font-size:14px;font-weight:700;cursor:pointer;border:2px solid var(--linea);
+    border-radius:10px;background:#fff;color:var(--gris-oscuro);transition:all .18s;min-width:66px;
+  }
+  .toggle button.si.activo{background:var(--navy);border-color:var(--navy);color:#fff}
+  .toggle button.no.activo{background:var(--gris);border-color:var(--gris);color:#fff}
+  .toggle button:not(.activo):hover{border-color:var(--gris-medio)}
+
+  /* ===================== MULTI-OPCIÓN ===================== */
+  .opciones{display:flex;flex-direction:column;gap:8px;width:100%;margin-top:10px}
+  .opciones button{
+    padding:13px 16px;font-size:14px;font-weight:600;cursor:pointer;text-align:left;
+    border:2px solid var(--linea);border-radius:10px;background:#fff;color:var(--texto);transition:all .18s;
+  }
+  .opciones button.activo{background:var(--navy);border-color:var(--navy);color:#fff}
+  .opciones button:not(.activo):hover{border-color:var(--gris-medio)}
+  .pregunta.columna{flex-direction:column;align-items:flex-start}
+  .pregunta.columna .fila{display:flex;align-items:center;gap:14px;width:100%}
+
+  /* ===================== CARD STICKY DE PRECIO ===================== */
+  .precio-sticky{
+    position:sticky;bottom:20px;z-index:50;margin:28px 0 0;
+    background:var(--navy-deep);color:#EAF0F8;border-radius:14px;padding:20px 22px 22px;
+    box-shadow:0 14px 38px rgba(6,25,47,.5);
+    border:1px solid rgba(233,211,160,.28);
+    outline:3px solid var(--navy-deep);outline-offset:-9px; /* doble filete estilo comprobante */
+  }
+  .precio-sticky.pulse{animation:pulse .42s ease}
+  @keyframes pulse{0%{transform:scale(1)}40%{transform:scale(1.02)}100%{transform:scale(1)}}
+  .precio-sticky .encabezado{
+    font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+    color:var(--gold-light);margin-bottom:14px;display:flex;align-items:center;gap:9px;
+    padding-bottom:12px;border-bottom:1px solid rgba(233,211,160,.22);
+  }
+  .precio-sticky .encabezado .rombo{color:var(--gold);font-size:9px}
+  .precio-sticky .lineas{
+    font-size:13.5px;color:#C4D0E0;
+    font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1;
+  }
+  .precio-sticky .linea{display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;gap:16px}
+  .precio-sticky .linea span:last-child{font-family:var(--mono);font-size:12.5px;color:#DCE4EF;white-space:nowrap}
+  .precio-sticky .divisor{border-top:1px solid var(--gold);opacity:.65;margin:12px 0 10px}
+  .precio-sticky .total{display:flex;justify-content:space-between;align-items:baseline;gap:16px}
+  .precio-sticky .total .lbl{font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold-light)}
+  .precio-sticky .total .val{
+    font-family:var(--serif);font-size:30px;font-weight:400;color:var(--gold-light);
+    font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1;white-space:nowrap;
+  }
+
+  /* ===================== CONTRATO CON FORMATO ===================== */
+  .doc-contrato{
+    max-height:440px;overflow-y:auto;border:1px solid var(--linea);border-radius:12px;
+    padding:26px 24px;background:#fff;box-shadow:inset 0 0 0 1px #fff, 0 2px 14px rgba(8,38,78,.06);
+  }
+  .doc-contrato::-webkit-scrollbar{width:10px}
+  .doc-contrato::-webkit-scrollbar-thumb{background:var(--gold);border-radius:10px;border:2px solid #fff}
+  .doc-titulo{font-family:var(--serif);text-align:center;color:var(--navy);font-size:17px;font-weight:700;line-height:1.35}
+  .doc-sub{text-align:center;color:var(--gris);font-size:12.5px;margin-top:4px}
+  .doc-regla{height:3px;width:70px;margin:14px auto;border-radius:3px;
+    background:linear-gradient(90deg,var(--gold),var(--gold-light))}
+  .doc-partes{display:grid;grid-template-columns:1fr;gap:12px;margin:16px 0}
+  .doc-parte{background:var(--fondo);border-radius:10px;padding:12px 14px;font-size:13px;border-left:3px solid var(--gold)}
+  .doc-parte .rol{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--navy-soft);margin-bottom:3px}
+  .doc-clausula{margin-top:18px}
+  .doc-clausula h4{
+    font-family:var(--serif);font-size:14px;color:var(--navy);margin-bottom:6px;
+    padding-bottom:5px;border-bottom:1px solid var(--linea);
+  }
+  .doc-clausula h4 .num{
+    display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;
+    background:var(--navy);color:var(--gold-light);border-radius:6px;font-size:12px;margin-right:8px;
+  }
+  .doc-clausula p{font-size:13px;color:#2C3646;margin:6px 0}
+  .doc-clausula ul{margin:6px 0 6px 20px;font-size:13px;color:#2C3646}
+  .doc-clausula ul li{margin:3px 0}
+  .doc-destacado{background:var(--gold-pale);border-left:3px solid var(--gold);
+    padding:10px 14px;border-radius:8px;font-size:13px;margin:8px 0}
+  /* Tabla de rentas contratadas dentro del contrato */
+  .doc-tabla{width:100%;border-collapse:collapse;margin:8px 0 4px;font-size:12.5px}
+  .doc-tabla th,.doc-tabla td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--linea)}
+  .doc-tabla th{font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--gris);font-weight:700}
+  .doc-tabla td.num,.doc-tabla th.num{text-align:right;font-family:var(--mono);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .doc-tabla tr.desc td{color:var(--gold);font-weight:600}
+  .doc-tabla tr.total td{border-top:2px solid var(--gold);border-bottom:none;font-weight:700;color:var(--navy);padding-top:9px}
+  .doc-tabla tr.total td.num{font-family:var(--serif);font-size:15px}
+  .doc-firma{margin-top:18px;padding-top:12px;border-top:1px dashed var(--linea);font-size:12px;color:var(--gris)}
+
+  /* ===================== ACEPTACIÓN ===================== */
+  .aceptacion{
+    margin-top:16px;background:linear-gradient(180deg,#fff,#FBFCFE);border-radius:14px;padding:20px;
+    box-shadow:0 2px 14px rgba(8,38,78,.07);border:1px solid #EEF1F6;
+  }
+  .aceptacion label{display:flex;gap:12px;align-items:flex-start;cursor:pointer;font-weight:600;font-size:14.5px;color:var(--navy)}
+  .aceptacion input[type=checkbox]{width:22px;height:22px;flex-shrink:0;margin-top:2px;accent-color:var(--navy);cursor:pointer}
+  .aceptacion ul{list-style:none;margin:12px 0 0 34px;font-size:13.5px;font-weight:400;color:var(--gris-oscuro)}
+  .aceptacion ul li{padding:3px 0}
+
+  /* ===================== BOTONES FINALES ===================== */
+  .botones-finales{display:flex;gap:12px;margin-top:22px;flex-wrap:wrap}
+  .btn{flex:1;min-width:200px;padding:18px;font-size:15px;font-weight:700;cursor:pointer;border:none;border-radius:14px;
+    transition:transform .12s,box-shadow .12s,opacity .2s}
+  .btn:active{transform:scale(.98)}
+  .btn-si{background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--navy);
+    box-shadow:0 6px 20px rgba(196,146,58,.4)}
+  .btn-no{background:#fff;color:var(--gris-oscuro);border:2px solid var(--linea)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+
+  /* ===================== SPINNER ===================== */
+  .spinner{display:inline-block;width:16px;height:16px;border:2.5px solid rgba(8,38,78,.25);
+    border-top-color:var(--navy);border-radius:50%;animation:girar .7s linear infinite;vertical-align:middle;margin-right:8px}
+  @keyframes girar{to{transform:rotate(360deg)}}
+  .loading-inline{color:var(--navy-soft);font-size:13px;margin-top:8px;display:none}
+
+  /* ===================== CONFIRMACIÓN ===================== */
+  #confirmacion{display:none;text-align:center;padding:30px 10px}
+  #confirmacion .check-grande{width:88px;height:88px;margin:0 auto 18px;border-radius:50%;
+    background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--navy);font-size:46px;
+    display:flex;align-items:center;justify-content:center;animation:pop .5s cubic-bezier(.2,1.3,.4,1);
+    box-shadow:0 10px 30px rgba(196,146,58,.4)}
+  #confirmacion.rechazo .check-grande{background:var(--gris);color:#fff;box-shadow:0 10px 30px rgba(89,103,119,.35)}
+  @keyframes pop{0%{transform:scale(0)}100%{transform:scale(1)}}
+  #confirmacion h2{font-family:var(--serif);color:var(--navy);font-size:23px;margin-bottom:14px}
+  #confirmacion .resumen{position:relative;background:#fff;border-radius:14px;padding:22px;text-align:left;max-width:470px;margin:0 auto;
+    box-shadow:0 2px 14px rgba(8,38,78,.08);font-size:14px;border:1px solid var(--linea)}
+  #confirmacion .resumen p{margin:6px 0}
+  #confirmacion .nota{margin-top:16px;font-size:13.5px;color:var(--gris-oscuro)}
+
+  /* Pantalla "Ya completado" */
+  #ya-completado{display:none;text-align:center;padding:30px 10px}
+  #ya-completado .yc-check{width:80px;height:80px;margin:0 auto 16px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-size:40px;color:#fff;
+    background:linear-gradient(135deg,var(--navy-soft),var(--navy));box-shadow:0 10px 30px rgba(8,38,78,.32)}
+  #ya-completado h2{font-family:var(--serif);color:var(--navy);font-size:23px;margin-bottom:14px}
+  #ya-completado .yc-cuerpo{background:#fff;border-radius:14px;padding:22px;text-align:left;max-width:470px;margin:0 auto;
+    border:1px solid var(--linea);box-shadow:0 8px 26px rgba(8,38,78,.08)}
+  #ya-completado .yc-cuerpo p{margin:6px 0}
+  #ya-completado .yc-resumen{background:var(--fondo);border-radius:10px;padding:14px;margin:12px 0}
+  #ya-completado .yc-titulo{font-family:var(--serif);color:var(--navy);font-weight:700;margin-bottom:8px}
+  #ya-completado .linea{display:flex;justify-content:space-between;padding:4px 0;font-variant-numeric:tabular-nums}
+  #ya-completado .linea.total-yc{border-top:2px solid var(--gold);margin-top:6px;padding-top:8px;font-weight:700;color:var(--navy)}
+
+  /* Sello de documento "ACEPTADO" (reemplaza el confeti) */
+  .sello{
+    position:absolute;top:-20px;right:-6px;transform:rotate(-13deg);
+    font-family:var(--serif);text-transform:uppercase;letter-spacing:2.5px;font-size:15px;font-weight:700;
+    color:var(--gold);border:2.5px double var(--gold);border-radius:8px;padding:7px 15px;
+    background:rgba(196,146,58,.06);box-shadow:0 2px 10px rgba(196,146,58,.18);
+    animation:estampar .55s cubic-bezier(.2,1.4,.35,1);
+  }
+  @keyframes estampar{
+    0%{opacity:0;transform:rotate(-13deg) scale(2.6)}
+    55%{opacity:1;transform:rotate(-13deg) scale(.9)}
+    100%{transform:rotate(-13deg) scale(1)}
+  }
+  #banner-error{display:none;background:#FCECEA;color:var(--error);border:1px solid var(--error);
+    border-radius:10px;padding:12px 14px;font-size:14px;margin-top:14px;font-weight:600}
+
+  footer.pie{text-align:center;padding:24px 16px 8px;color:var(--gris-medio);font-size:12px}
+  footer.pie strong{color:var(--navy)}
+</style>
+</head>
+<body>
+
+<!-- ===================== HEADER ===================== -->
+<header class="hero">
+  <div class="logo-card">
+    <img src="data:image/jpeg;base64,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" alt="Cano Herrera Asesorías SAS">
+  </div>
+  <div class="hero-eyebrow">Año Gravable 2025 · Formulario 210</div>
+  <h1>Cotización de tu Declaración de Renta</h1>
+  <div class="diamante"><span class="rombo">◆</span></div>
+  <div class="sub">Cano Herrera Asesorías SAS · tu tarifa 2026 se liquida a medida que respondes</div>
+</header>
+
+<div class="contenedor">
+  <div id="formulario">
+    <div class="app">
+
+      <!-- ===== COLUMNA 1 · PREGUNTAS (una renta por familiar) ===== -->
+      <div class="col-preguntas">
+        <div class="seccion">
+          <div class="seccion-eyebrow"><span class="rombo">◆</span> Sección 01 · Rentas a declarar</div>
+          <div class="seccion-titulo">Tu declaración y la de tu familia</div>
+          <p class="ayuda">Empieza con tu propia declaración. Agrega una renta por cada familiar (cónyuge, hijos, padres): al declarar <strong>más de una renta obtienes 15% de descuento</strong> en todas.</p>
+          <div id="rentas-cont"></div>
+          <button type="button" class="btn-agregar" id="btn-agregar">＋ Agregar otra renta (cónyuge, hijo, padre…)</button>
+        </div>
+      </div>
+
+      <!-- ===== COLUMNA 2 · LIQUIDACIÓN (sticky) ===== -->
+      <aside class="col-side">
+        <div class="precio-sticky" id="precio-sticky">
+          <div class="encabezado"><span class="rombo">◆</span> Liquidación · Tarifa 2026</div>
+          <div class="lineas" id="precio-lineas"></div>
+          <div class="divisor"></div>
+          <div class="total"><span class="lbl">Total a pagar</span><span class="val" id="precio-total">$260.000</span></div>
+        </div>
+      </aside>
+
+      <!-- ===== FILA 2 · CONTRATO Y FIRMA ===== -->
+      <div class="col-contrato">
+        <div class="seccion">
+          <div class="seccion-eyebrow"><span class="rombo">◆</span> Sección 02 · Firma electrónica</div>
+          <div class="seccion-titulo">Contrato y aceptación</div>
+          <div class="doc-contrato" id="contrato"></div>
+
+          <div class="aceptacion">
+            <label>
+              <input type="checkbox" id="chk-acepto">
+              <span>He leído y <strong>ACEPTO</strong> los términos y condiciones del contrato de servicios tributarios.</span>
+            </label>
+            <ul>
+              <li>✓ Entregaré los documentos <strong>UNA SEMANA ANTES</strong> de la fecha acordada</li>
+              <li>✓ La información que proporcionaré es veraz y completa</li>
+              <li>✓ Autorizo la preparación y presentación de las rentas ante la DIAN</li>
+              <li>✓ Acepto el valor total cotizado de <strong id="conf-precio">$260.000</strong></li>
+              <li>✓ Conozco la multa de <strong>$70.000</strong> por entrega tardía de documentos</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="botones-finales">
+          <button class="btn btn-si" id="btn-si">✅ SÍ, QUIERO QUE PREPAREN MIS RENTAS</button>
+          <button class="btn btn-no" id="btn-no">❌ NO, GRACIAS</button>
+        </div>
+
+        <div id="banner-error"></div>
+      </div>
+
+    </div><!-- /app -->
+  </div><!-- /formulario -->
+
+  <div id="confirmacion">
+    <div class="check-grande" id="conf-icono">✓</div>
+    <h2 id="conf-titulo">¡Gracias!</h2>
+    <div class="resumen" id="conf-resumen"></div>
+    <div class="nota">¿Dudas? Escríbenos a <strong>rentas.chsas@gmail.com</strong></div>
+  </div>
+
+  <div id="ya-completado">
+    <div class="yc-check">✓</div>
+    <h2>Este formulario ya fue completado</h2>
+    <div class="yc-cuerpo" id="yc-cuerpo"></div>
+  </div>
+
+  <footer class="pie">
+    <strong>CANO HERRERA ASESORÍAS SAS</strong><br>
+    Asesoría tributaria · rentas.chsas@gmail.com
+  </footer>
+</div>
+
+<script>
+/* =====================================================================
+   CONFIGURACIÓN — ⚠️ REEMPLAZA ESTA URL POR LA DE TU WEB APP
+   ===================================================================== */
+const URL_BACKEND = "https://script.google.com/macros/s/AKfycbwxjnJdw3tNn69k0bFtCqMRT_RasXQBbkgOOq72JuQbcGFYII149SbOlL0aCqWza3GNUA/exec";
+
+/* =====================================================================
+   CONSTANTES DE PRECIO
+   ===================================================================== */
+const PRECIO_BASE=260000, COSTO_FUENTE_EXTRA=50000, COSTO_EXTERIOR_ING=150000,
+      COSTO_ACTIVOS_5A15=80000, COSTO_ACTIVOS_MAS15=160000, COSTO_INVERSIONES=70000,
+      COSTO_ACTIVOS_EXT=180000, COSTO_AFC=40000, COSTO_GANANCIAS=120000, MULTA_DOCS=70000;
+
+/* =====================================================================
+   PROFESIONALES (rotación por facturación acumulada)
+   Johanna emite los contratos hasta $4.000.000 acumulados; luego Leidy.
+   El backend decide quién está activo; aquí solo lo mostramos.
+   ===================================================================== */
+const PROFESIONALES = {
+  johanna:{nombre:"JOHANNA CAROLINA CANO", cedula:"1022421206"},
+  leidy:  {nombre:"LEIDY CAROLINA GONZÁLEZ TIBAQUIRÁ", cedula:"1012430526"},
+};
+let profesionalActivo = PROFESIONALES.johanna; // por defecto
+
+/* =====================================================================
+   DEFINICIÓN DE PREGUNTAS
+   ===================================================================== */
+const PREG_INGRESOS=[
+  {id:"ingreso_salario",icono:"💼",texto:"¿Recibe ingresos por SALARIO como empleado?"},
+  {id:"ingreso_pension",icono:"🏦",texto:"¿Recibe ingresos por PENSIÓN?"},
+  {id:"ingreso_honorarios",icono:"📋",texto:"¿Recibe ingresos por HONORARIOS o prestación de servicios independientes?"},
+  {id:"ingreso_arriendos",icono:"🏠",texto:"¿Recibe ingresos por ARRIENDOS de inmuebles?"},
+  {id:"ingreso_dividendos",icono:"📊",texto:"¿Recibe ingresos por DIVIDENDOS o participación en empresas/sociedades?"},
+  {id:"ingreso_exterior",icono:"🌎",texto:"¿Recibe ingresos del EXTERIOR?"},
+];
+const PREG_ACTIVOS_SN=[
+  {id:"inversiones_nacionales",icono:"💰",texto:"¿Tiene inversiones financieras nacionales? (CDT, fondos, acciones, fiducias)"},
+  {id:"activos_exterior",icono:"🌐",texto:"¿Tiene activos o cuentas bancarias en el EXTERIOR?"},
+];
+const PREG_DEDUCCIONES=[
+  {id:"dependientes",icono:"👨‍👩‍👧",texto:"¿Tiene dependientes económicos? (hijos, padres, cónyuge)"},
+  {id:"credito_hipotecario",icono:"🏡",texto:"¿Tiene crédito hipotecario o pagos de vivienda?"},
+  {id:"aportes_afc",icono:"🐖",texto:"¿Realizó aportes voluntarios a pensión o AFC durante 2025?"},
+  {id:"ganancias_ocasionales",icono:"🎰",texto:"¿Tuvo ventas de activos, herencias, loterías o ganancias ocasionales durante 2025?"},
+];
+
+/* =====================================================================
+   ESTADO — LISTA DE RENTAS (titular + familiares)
+   ===================================================================== */
+const MAX_RENTAS=8;          // tope de rentas por grupo familiar
+const DESCUENTO=0.15;        // 15% cuando hay más de una renta
+const PISO_DESCUENTO=220000; // el precio de una renta nunca baja de $220.000 aunque tenga descuento
+let rentas=[];              // {_id,tipo,parentesco,nombre,cedula,email,origen,resp:{}}
+let idxSeq=0;               // id incremental para cada renta
+let clienteExistente=false, precio2025=null;
+let grupoSheet="";          // letra del grupo familiar detectada en el Sheet (A, B, …)
+let busquedaHecha=false;    // evita repetir la búsqueda de grupo al salir del email
+
+/* Respuestas en blanco de una renta */
+function nuevaResp(){
+  return {ingreso_salario:null,ingreso_pension:null,ingreso_honorarios:null,ingreso_arriendos:null,
+    ingreso_dividendos:null,ingreso_exterior:null,activos_cantidad:null,
+    inversiones_nacionales:null,activos_exterior:null,dependientes:null,
+    credito_hipotecario:null,aportes_afc:null,ganancias_ocasionales:null};
+}
+function agregarRenta(tipo,prefill){
+  if(rentas.length>=MAX_RENTAS) return null;
+  prefill=prefill||{};
+  const r={_id:++idxSeq,tipo:tipo,parentesco:prefill.parentesco||"",
+    nombre:prefill.nombre||"",cedula:prefill.cedula||"",email:prefill.email||"",
+    origen:prefill.origen||"manual",colapsada:false,resp:nuevaResp()};
+  rentas.push(r);
+  return r;
+}
+function quitarRenta(id){ rentas=rentas.filter(r=>r._id!==id); renderRentas(); }
+
+/* Formato moneda colombiana ($260.000) y escapes */
+function formatoCOP(n){ return "$"+Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,"."); }
+function esc(s){ return String(s==null?"":s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+function escAttr(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;"); }
+function primerNombre(s){ return String(s||"").trim().split(/\s+/)[0]||""; }
+
+/* =====================================================================
+   CÁLCULO DE PRECIO DE UNA RENTA
+   ===================================================================== */
+function calcularPrecioRenta(r){
+  const q=r.resp;
+  const d={base:PRECIO_BASE,fuentes:0,exterior_ing:0,activos:0,inversiones:0,activos_ext:0,afc:0,ganancias:0};
+  const fuentes=[q.ingreso_salario,q.ingreso_pension,q.ingreso_honorarios,q.ingreso_arriendos,q.ingreso_dividendos];
+  const cuantasSi=fuentes.filter(v=>v===true).length;
+  if(cuantasSi>1) d.fuentes=(cuantasSi-1)*COSTO_FUENTE_EXTRA;
+  if(q.ingreso_exterior===true) d.exterior_ing=COSTO_EXTERIOR_ING;
+  if(q.activos_cantidad==="entre5y15") d.activos=COSTO_ACTIVOS_5A15;
+  else if(q.activos_cantidad==="mas15") d.activos=COSTO_ACTIVOS_MAS15;
+  if(q.inversiones_nacionales===true) d.inversiones=COSTO_INVERSIONES;
+  if(q.activos_exterior===true) d.activos_ext=COSTO_ACTIVOS_EXT;
+  if(q.aportes_afc===true) d.afc=COSTO_AFC;
+  if(q.ganancias_ocasionales===true) d.ganancias=COSTO_GANANCIAS;
+  d.total=d.base+d.fuentes+d.exterior_ing+d.activos+d.inversiones+d.activos_ext+d.afc+d.ganancias;
+  return d;
+}
+
+/* ¿Están respondidas las 13 preguntas de una renta? */
+function rentaCompleta(r){
+  const q=r.resp;
+  return Object.keys(nuevaResp()).every(k=>q[k]!==null && q[k]!==undefined);
+}
+
+/* Cálculo agregado del grupo familiar (con descuento del 15% a todas si hay >1) */
+function calcularAgregado(){
+  const aplica=rentas.length>=2;
+  const items=rentas.map(r=>{
+    const bruto=calcularPrecioRenta(r).total;
+    // 15% de descuento, pero nunca por debajo del piso ($220.000) ni por encima del bruto
+    const neto=aplica?Math.min(bruto,Math.max(Math.round(bruto*(1-DESCUENTO)),PISO_DESCUENTO)):bruto;
+    return {r,bruto,neto};
+  });
+  const totalBruto=items.reduce((s,it)=>s+it.bruto,0);
+  const totalNeto=items.reduce((s,it)=>s+it.neto,0);
+  return {items,aplica,totalBruto,totalNeto,descuento:totalBruto-totalNeto};
+}
+function etiquetaRenta(r){ return r.tipo==="titular"?"Titular":(r.parentesco||"Familiar"); }
+
+/* =====================================================================
+   RENDER DE PREGUNTAS (ligadas a una renta)
+   ===================================================================== */
+function crearPreguntaSN(r,p){
+  const div=document.createElement("div");
+  div.className="pregunta";
+  div.innerHTML=`<span class="icono">${p.icono}</span><span class="texto">${p.texto}</span>
+    <div class="toggle"><button type="button" class="si">Sí</button><button type="button" class="no">No</button></div>`;
+  const bSi=div.querySelector(".si"), bNo=div.querySelector(".no");
+  if(r.resp[p.id]===true) bSi.classList.add("activo");
+  if(r.resp[p.id]===false) bNo.classList.add("activo");
+  bSi.addEventListener("click",()=>{r.resp[p.id]=true; bSi.classList.add("activo"); bNo.classList.remove("activo"); refrescar();});
+  bNo.addEventListener("click",()=>{r.resp[p.id]=false; bNo.classList.add("activo"); bSi.classList.remove("activo"); refrescar();});
+  return div;
+}
+function crearPreguntaActivos(r){
+  const div=document.createElement("div");
+  div.className="pregunta columna";
+  div.innerHTML=`<div class="fila"><span class="icono">🏗️</span>
+    <span class="texto">¿Cuántos activos posee? (inmuebles, vehículos, cuentas bancarias, inversiones)</span></div>
+    <div class="opciones">
+      <button type="button" data-val="menos5">Menos de 5 activos</button>
+      <button type="button" data-val="entre5y15">Entre 5 y 15 activos</button>
+      <button type="button" data-val="mas15">Más de 15 activos</button>
+    </div>`;
+  const bs=div.querySelectorAll(".opciones button");
+  bs.forEach(b=>{
+    if(r.resp.activos_cantidad===b.dataset.val) b.classList.add("activo");
+    b.addEventListener("click",()=>{
+      r.resp.activos_cantidad=b.dataset.val; bs.forEach(x=>x.classList.remove("activo")); b.classList.add("activo"); refrescar();
+    });
+  });
+  return div;
+}
+
+/* Construye el panel completo de una renta */
+function crearPanelRenta(r,i){
+  const panel=document.createElement("div");
+  panel.className="renta"+(r.tipo==="titular"?" titular":"")+(r.colapsada?" colapsada":"");
+  const numTag=String(i+1).padStart(2,"0");
+  const idBloque = r.tipo==="titular"
+    ? `<div class="campo-grupo full">
+         <label class="campo">📧 Correo electrónico</label>
+         <input class="txt f-email" type="email" placeholder="tucorreo@ejemplo.com" autocomplete="email" value="${escAttr(r.email)}">
+         <div class="loading-inline f-loading"><span class="spinner"></span>Buscando tus datos…</div>
+         <div class="msg-cliente f-msg"></div>
+       </div>
+       <div class="campo-grupo">
+         <label class="campo">👤 Nombre completo</label>
+         <input class="txt f-nombre" type="text" placeholder="Nombre y apellidos" autocomplete="name" value="${escAttr(r.nombre)}">
+       </div>
+       <div class="campo-grupo">
+         <label class="campo">🪪 Cédula</label>
+         <input class="txt f-cedula" type="number" inputmode="numeric" placeholder="Sin puntos" value="${escAttr(r.cedula)}">
+       </div>`
+    : `<div class="campo-grupo">
+         <label class="campo">👪 Parentesco</label>
+         <select class="txt f-parentesco">
+           <option value="">Selecciona…</option>
+           <option${r.parentesco==="Cónyuge"?" selected":""}>Cónyuge</option>
+           <option${r.parentesco==="Hijo(a)"?" selected":""}>Hijo(a)</option>
+           <option${r.parentesco==="Padre"?" selected":""}>Padre</option>
+           <option${r.parentesco==="Madre"?" selected":""}>Madre</option>
+           <option${r.parentesco==="Hermano(a)"?" selected":""}>Hermano(a)</option>
+           <option${r.parentesco==="Otro familiar"?" selected":""}>Otro familiar</option>
+         </select>
+       </div>
+       <div class="campo-grupo">
+         <label class="campo">👤 Nombre completo</label>
+         <input class="txt f-nombre" type="text" placeholder="Nombre y apellidos" value="${escAttr(r.nombre)}">
+       </div>
+       <div class="campo-grupo full">
+         <label class="campo">🪪 Cédula</label>
+         <input class="txt f-cedula" type="number" inputmode="numeric" placeholder="Sin puntos" value="${escAttr(r.cedula)}">
+       </div>`;
+
+  panel.innerHTML=`
+    <div class="renta-head">
+      <span class="renta-chevron" aria-hidden="true">▾</span>
+      <span class="renta-tag"><span class="rombo">◆</span> Renta ${numTag} · ${esc(etiquetaRenta(r))}</span>
+      <span class="renta-completa" id="completa-${r._id}">✓ Completa</span>
+      <span class="renta-sub" id="sub-${r._id}"></span>
+      ${r.tipo!=="titular"?`<button type="button" class="renta-quitar">Quitar</button>`:""}
+    </div>
+    <div class="renta-body">
+      <div class="renta-id">${idBloque}</div>
+      <div class="sub-eyebrow">Ingresos</div>
+      <div class="preguntas-grid g-ing"></div>
+      <div class="sub-eyebrow">Patrimonio</div>
+      <div class="preguntas-grid g-pat"></div>
+      <div class="sub-eyebrow">Deducciones</div>
+      <div class="preguntas-grid g-ded"></div>
+    </div>`;
+
+  // Insertar las preguntas ligadas a esta renta
+  const gIng=panel.querySelector(".g-ing");
+  PREG_INGRESOS.forEach(p=>gIng.appendChild(crearPreguntaSN(r,p)));
+  const gPat=panel.querySelector(".g-pat");
+  gPat.appendChild(crearPreguntaActivos(r));
+  PREG_ACTIVOS_SN.forEach(p=>gPat.appendChild(crearPreguntaSN(r,p)));
+  const gDed=panel.querySelector(".g-ded");
+  PREG_DEDUCCIONES.forEach(p=>gDed.appendChild(crearPreguntaSN(r,p)));
+
+  // Campos de identificación → escriben en la renta
+  const fNombre=panel.querySelector(".f-nombre");
+  const fCedula=panel.querySelector(".f-cedula");
+  fNombre.addEventListener("input",()=>{ r.nombre=fNombre.value; refrescar(false); });
+  fCedula.addEventListener("input",()=>{ r.cedula=fCedula.value; refrescar(false); });
+  if(r.tipo==="titular"){
+    const fEmail=panel.querySelector(".f-email");
+    fEmail.addEventListener("input",()=>{ r.email=fEmail.value; });
+    fEmail.addEventListener("blur",()=>buscarCliente(r,panel));
+  }else{
+    const fPar=panel.querySelector(".f-parentesco");
+    fPar.addEventListener("change",()=>{ r.parentesco=fPar.value; renderRentas(); });
+    const btnQuitar=panel.querySelector(".renta-quitar");
+    btnQuitar.addEventListener("click",(ev)=>{ ev.stopPropagation(); quitarRenta(r._id); });
+  }
+
+  // Plegar / desplegar el panel (clic en el encabezado). El subtotal queda visible.
+  const head=panel.querySelector(".renta-head");
+  head.addEventListener("click",()=>{
+    r.colapsada=!r.colapsada;
+    panel.classList.toggle("colapsada",r.colapsada);
+  });
+  return panel;
+}
+
+/* Reconstruye todos los paneles (al agregar/quitar/cambiar parentesco) */
+function renderRentas(){
+  const cont=document.getElementById("rentas-cont");
+  cont.innerHTML="";
+  rentas.forEach((r,i)=>cont.appendChild(crearPanelRenta(r,i)));
+  document.getElementById("btn-agregar").disabled = rentas.length>=MAX_RENTAS;
+  refrescar();
+}
+
+/* =====================================================================
+   REFRESCAR LIQUIDACIÓN + SUBTOTALES + CONTRATO
+   pulse=false evita la animación (al teclear nombre/cédula)
+   ===================================================================== */
+function refrescar(pulse){
+  const ag=calcularAgregado();
+  // Liquidación (una línea por renta + descuento)
+  let html="";
+  ag.items.forEach(it=>{
+    const nom=it.r.nombre?" · "+esc(primerNombre(it.r.nombre)):"";
+    html+=`<div class="linea"><span>${esc(etiquetaRenta(it.r))}${nom}</span><span>${formatoCOP(it.bruto)}</span></div>`;
+  });
+  if(ag.aplica) html+=`<div class="linea descuento"><span>Descuento familiar (−15%)</span><span>−${formatoCOP(ag.descuento)}</span></div>`;
+  document.getElementById("precio-lineas").innerHTML=html;
+  document.getElementById("precio-total").textContent=formatoCOP(ag.totalNeto);
+  document.getElementById("conf-precio").textContent=formatoCOP(ag.totalNeto);
+  // Subtotal + estado de completitud por renta
+  ag.items.forEach(it=>{
+    const el=document.getElementById("sub-"+it.r._id);
+    if(el){
+      el.innerHTML = ag.aplica
+        ? `<span class="bruto">${formatoCOP(it.bruto)}</span><span class="neto">${formatoCOP(it.neto)}</span>`
+        : `<span class="neto">${formatoCOP(it.neto)}</span>`;
+    }
+    const badge=document.getElementById("completa-"+it.r._id);
+    if(badge){
+      const lista=rentaCompleta(it.r);
+      badge.textContent = lista ? "✓ Completa" : "Sin terminar";
+      badge.classList.toggle("incompleta", !lista);
+    }
+  });
+  // Pulso
+  if(pulse!==false){
+    const card=document.getElementById("precio-sticky");
+    card.classList.remove("pulse"); void card.offsetWidth; card.classList.add("pulse");
+  }
+  actualizarContrato(ag);
+}
+function actualizarContrato(ag){
+  ag = ag || calcularAgregado();
+  const tit=rentas[0]||{};
+  const nombre=tit.nombre||"[Nombre del titular]";
+  const cedula=tit.cedula||"[Cédula]";
+  const email =tit.email||"[Correo]";
+  const prof=profesionalActivo;
+  const n=ag.items.length;
+
+  // Filas de la tabla de rentas contratadas
+  let filas="";
+  ag.items.forEach(it=>{
+    filas+=`<tr><td>${esc(it.r.nombre||"—")}</td><td>${esc(etiquetaRenta(it.r))}</td><td>C.C. ${esc(it.r.cedula||"—")}</td><td class="num">${formatoCOP(it.bruto)}</td></tr>`;
+  });
+  const filaDesc = ag.aplica
+    ? `<tr class="desc"><td colspan="3">Descuento por ${n} rentas del grupo familiar (−15%, piso $220.000 por renta)</td><td class="num">−${formatoCOP(ag.descuento)}</td></tr>`
+    : "";
+  const objeto = n>1
+    ? "las declaraciones de renta relacionadas en la cláusula 4"
+    : "la declaración de renta del CLIENTE";
+
+  document.getElementById("contrato").innerHTML=`
+    <div class="doc-titulo">CONTRATO DE SERVICIOS TRIBUTARIOS</div>
+    <div class="doc-sub">Preparación y Presentación de Declaración de Renta 2026 · Año Gravable 2025</div>
+    <div class="doc-regla"></div>
+
+    <div class="doc-partes">
+      <div class="doc-parte"><div class="rol">Cliente (titular)</div>
+        ${esc(nombre)}<br>C.C. ${esc(cedula)}<br>${esc(email)}
+        ${n>1?`<br><small style="color:var(--gris)">Contrata ${n} rentas del grupo familiar (cláusula 4)</small>`:""}</div>
+      <div class="doc-parte"><div class="rol">Profesional Tributario</div>
+        ${esc(prof.nombre)}<br>C.C. ${prof.cedula}<br>rentas.chsas@gmail.com<br>
+        <small style="color:var(--gris)">Cano Herrera Asesorías SAS</small></div>
+    </div>
+
+    <div class="doc-clausula"><h4><span class="num">1</span>Objeto del servicio</h4>
+      <p>El PROFESIONAL se compromete a preparar y presentar ante la DIAN ${objeto} correspondiente(s) al año gravable 2025, de forma íntegra, oportuna y conforme a la normativa tributaria vigente. El servicio incluye, por cada renta:</p>
+      <ul>
+        <li>Análisis completo de ingresos, activos, pasivos y deducciones</li>
+        <li>Preparación del formulario 210 ante la DIAN</li>
+        <li>Presentación electrónica ante la DIAN antes del vencimiento</li>
+        <li>Envío de soportes del ayuda renta por correo electrónico</li>
+      </ul></div>
+
+    <div class="doc-clausula"><h4><span class="num">2</span>Compromisos del cliente</h4>
+      <p>a) Entregar documentos <strong>UNA (1) SEMANA ANTES</strong> de la fecha de análisis acordada: certificados de ingresos y retenciones, estados de cuenta bancarios 2025, certificados de inversiones (CDT, fondos, fiducias), comprobantes de pagos y deducciones, documentos de activos y pasivos, y demás soportes solicitados.</p>
+      <p>b) Proporcionar información veraz y completa.</p>
+      <p>c) Comunicar cambios, correcciones o adiciones de inmediato.</p>
+      <p>d) Responder consultas del PROFESIONAL dentro de 48 horas.</p></div>
+
+    <div class="doc-clausula"><h4><span class="num">3</span>Compromisos del profesional</h4>
+      <p>a) Analizar completamente la información entregada.</p>
+      <p>b) Presentar la(s) declaración(es) ante la DIAN antes del vencimiento del calendario tributario.</p>
+      <p>c) Enviar al CLIENTE los soportes de la declaración y el ayuda renta.</p>
+      <p>d) Mantener absoluta confidencialidad conforme a la Ley 1581 de 2012 (Protección de Datos Personales).</p></div>
+
+    <div class="doc-clausula"><h4><span class="num">4</span>Valor del servicio y rentas contratadas</h4>
+      <p>El CLIENTE contrata la preparación y presentación de la(s) siguiente(s) declaración(es) de renta (AG 2025):</p>
+      <table class="doc-tabla">
+        <thead><tr><th>Declarante</th><th>Parentesco</th><th>Documento</th><th class="num">Valor</th></tr></thead>
+        <tbody>
+          ${filas}
+          ${filaDesc}
+          <tr class="total"><td colspan="3">Total a pagar</td><td class="num">${formatoCOP(ag.totalNeto)}</td></tr>
+        </tbody>
+      </table>
+      ${ag.aplica?`<div class="doc-destacado">Incluye <strong>15% de descuento</strong> por declarar ${n} rentas de un mismo grupo familiar. El valor de cada renta no baja de <strong>$220.000 COP</strong>.</div>`:``}</div>
+
+    <div class="doc-clausula"><h4><span class="num">5</span>Multa por incumplimiento en entrega de documentos</h4>
+      <p>Si el CLIENTE no entrega la totalidad de los documentos dentro del plazo establecido (una semana antes de la fecha de análisis), se aplicará un cobro adicional de <strong>SETENTA MIL PESOS ($70.000 COP)</strong> por gestión extemporánea, dada la complejidad operativa de procesar información fuera de los tiempos acordados y el riesgo de incumplimiento ante la DIAN.</p></div>
+
+    <div class="doc-clausula"><h4><span class="num">6</span>Responsabilidades y limitaciones</h4>
+      <p><strong>El PROFESIONAL</strong> responde por el cálculo correcto según la normativa vigente, la presentación oportuna ante la DIAN y el uso adecuado de los soportes entregados.</p>
+      <p><strong>El CLIENTE</strong> responde por la veracidad de la información suministrada, la entrega oportuna de documentos y las consecuencias derivadas de información incorrecta o incompleta.</p>
+      <p>El incumplimiento del CLIENTE en la entrega de documentos puede afectar la presentación oportuna; en tal caso, el PROFESIONAL no será responsable por sanciones de extemporaneidad.</p></div>
+
+    <div class="doc-clausula"><h4><span class="num">7</span>Multas o sanciones de la DIAN</h4>
+      <p>En caso de que la DIAN imponga una multa o sanción relacionada con la declaración, se <strong>evaluará la causa que la generó</strong> y será asumida por la parte responsable según las obligaciones establecidas en este contrato:</p>
+      <ul>
+        <li>Si la multa se origina en información incorrecta, incompleta o entregada de forma extemporánea por parte del <strong>CLIENTE</strong>, será cargada al CLIENTE.</li>
+        <li>Si la multa se origina en un error de cálculo, de presentación o de gestión imputable al <strong>PROFESIONAL</strong>, será asumida por el PROFESIONAL.</li>
+      </ul></div>
+
+    <div class="doc-clausula"><h4><span class="num">8</span>Validez legal</h4>
+      <p>Contrato válido conforme a la Ley 527 de 1999 (Comercio Electrónico) y el Decreto 2364 de 2012 (Firma Electrónica). La aceptación mediante clic en “ACEPTO LOS TÉRMINOS Y CONDICIONES” constituye <strong>firma electrónica válida y vinculante</strong> para ambas partes, con plenos efectos jurídicos.</p></div>
+
+    <div class="doc-firma">
+      Profesional: ${esc(prof.nombre)} (C.C. ${prof.cedula}) — rentas.chsas@gmail.com<br>
+      Fecha, hora e IP de aceptación: se registran automáticamente al aceptar.
+    </div>`;
+}
+
+/* =====================================================================
+   CONSULTAR PROFESIONAL ACTIVO (rotación) al cargar
+   ===================================================================== */
+async function cargarProfesionalActivo(){
+  try{
+    const resp=await fetch(URL_BACKEND+"?action=profesional");
+    const data=await resp.json();
+    if(data && data.key && PROFESIONALES[data.key]){
+      profesionalActivo=PROFESIONALES[data.key];
+      actualizarContrato();
+    }
+  }catch(e){ /* si falla, se queda Johanna por defecto */ }
+}
+
+/* =====================================================================
+   BUSCAR CLIENTE POR EMAIL
+   ===================================================================== */
+async function buscarCliente(r,panel){
+  const email=panel.querySelector(".f-email").value.trim();
+  const msg=panel.querySelector(".f-msg");
+  const loading=panel.querySelector(".f-loading");
+  r.email=email;
+  if(!email||!validarEmail(email)) return;
+  if(URL_BACKEND==="PEGA_AQUI_LA_URL_DE_TU_WEB_APP") return; // sin backend configurado
+  loading.style.display="block"; msg.style.display="none";
+  try{
+    const resp=await fetch(URL_BACKEND+"?action=buscar&email="+encodeURIComponent(email));
+    const data=await resp.json();
+    loading.style.display="none";
+    busquedaHecha=true;
+
+    // ── CASO A: el grupo/persona YA respondió → pantalla "Ya completado" ──
+    if(data.encontrado && data.yaRespondido){
+      mostrarYaCompletado(data);
+      return;
+    }
+
+    if(data.encontrado){
+      clienteExistente=true;
+      const cli=data.cliente||{};
+      precio2025=cli.precio2025||data.precio2025||null;
+      grupoSheet=cli.grupo||data.grupo||"";
+
+      // Prefill del titular (esta renta)
+      const nomTit=cli.nombre||data.nombre||"";
+      const cedTit=cli.cedula||data.cedula||"";
+      if(nomTit){ r.nombre=nomTit; panel.querySelector(".f-nombre").value=nomTit; }
+      if(cedTit){ r.cedula=cedTit; panel.querySelector(".f-cedula").value=cedTit; }
+      r.origen="sheet";
+
+      // ── CASO B con GRUPO: crear una renta por cada familiar del Sheet ──
+      const miembros=data.miembros||[];
+      const cedTitNorm=String(cedTit||"").trim();
+      let agregados=0;
+      if(miembros.length>1){
+        // El primer miembro es el contacto (titular). Los demás → familiares.
+        miembros.forEach(m=>{
+          const cedM=String(m.cedula||"").trim();
+          if(cedM && cedM===cedTitNorm) return;               // ese es el titular
+          if(rentas.some(x=>String(x.cedula||"").trim()===cedM)) return; // ya existe
+          agregarRenta("familiar",{nombre:m.nombre||"",cedula:cedM,parentesco:"Familiar",origen:"sheet"});
+          agregados++;
+        });
+      }
+
+      const precioTxt=precio2025?formatoCOP(precio2025):"(no registrada)";
+      const htmlMsg=(agregados>0)
+        ? `Hola <strong>${esc(nomTit)}</strong>. Detectamos <strong>${agregados+1} declaraciones</strong> asociadas a tu grupo familiar; las cotizamos una por una y obtienes <strong>15% de descuento</strong>. Tu tarifa el año pasado fue de <strong>${precioTxt}</strong>.`
+        : `Hola <strong>${esc(nomTit)}</strong>. Tu tarifa el año pasado fue de <strong>${precioTxt}</strong>. Completa las preguntas para conocer tu nueva tarifa.`;
+
+      if(agregados>0){
+        renderRentas();                    // repinta con los familiares del grupo
+        mostrarMensajeTitular(htmlMsg,"existente");  // re-fija el mensaje (la ref anterior quedó obsoleta)
+      }else{
+        msg.className="msg-cliente existente";
+        msg.innerHTML=htmlMsg;
+        msg.style.display="block";
+      }
+    }else{
+      clienteExistente=false; precio2025=null; grupoSheet="";
+      msg.className="msg-cliente nuevo";
+      msg.innerHTML="¡Bienvenido! Completa las preguntas para conocer tu tarifa.";
+      msg.style.display="block";
+    }
+    refrescar(false);
+  }catch(e){
+    loading.style.display="none";
+    console.error("Error buscando cliente:",e);
+  }
+}
+
+/* Re-fija el mensaje de bienvenida en el panel del titular tras un re-render */
+function mostrarMensajeTitular(html,cls){
+  const cont=document.getElementById("rentas-cont");
+  const primer=cont && cont.firstElementChild;
+  const msg=primer && primer.querySelector(".f-msg");
+  if(msg){ msg.className="msg-cliente "+(cls||"existente"); msg.innerHTML=html; msg.style.display="block"; }
+}
+
+/* =====================================================================
+   PANTALLA "YA COMPLETADO" (Caso A)
+   ===================================================================== */
+function mostrarYaCompletado(data){
+  const res=data.resumen||{};
+  const miembros=res.miembros||[];
+  document.getElementById("formulario").style.display="none";
+  const conf=document.getElementById("confirmacion");
+  const yc=document.getElementById("ya-completado");
+  conf.style.display="none";
+  yc.style.display="block";
+
+  let filas="";
+  miembros.forEach(m=>{
+    filas+=`<div class="linea"><span>${esc(m.nombre||"—")}</span><span>${formatoCOP(m.precioNuevo||0)}</span></div>`;
+  });
+  const estadoTxt = res.aceptado
+    ? `<strong style="color:var(--exito)">ACEPTADO ✅</strong>`
+    : `<strong style="color:var(--error)">RECHAZADO ❌</strong>`;
+  const totalTxt = miembros.length>1
+    ? `<div class="linea total-yc"><span>TOTAL</span><span>${formatoCOP(res.precioTotal||0)}</span></div>` : "";
+
+  document.getElementById("yc-cuerpo").innerHTML=`
+    <p>Completado por: <strong>${esc(res.respondidoPor||"")}</strong></p>
+    <p>Fecha: <strong>${esc(res.fechaRespuesta||"")}</strong></p>
+    <div class="yc-resumen">
+      <div class="yc-titulo">Resumen</div>
+      ${filas}
+      ${totalTxt}
+    </div>
+    <p>Estado: ${estadoTxt}</p>
+    <p style="margin-top:14px">Si necesitas hacer cambios, escríbenos a <strong>rentas.chsas@gmail.com</strong>.</p>`;
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+/* =====================================================================
+   VALIDACIONES
+   ===================================================================== */
+function validarEmail(email){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }
+/* Devuelve el primer campo faltante como mensaje, o "" si todo está completo */
+function primerFaltante(){
+  for(const r of rentas){
+    const et = r.tipo==="titular" ? "tu declaración" : `la renta de ${r.parentesco||"tu familiar"}`;
+    if(r.tipo==="titular" && !validarEmail((r.email||"").trim())) return "Ingresa un correo electrónico válido en tu declaración (titular).";
+    if(r.tipo!=="titular" && r.origen!=="sheet" && !r.parentesco) return "Selecciona el parentesco de tu familiar.";
+    if(!(r.nombre||"").trim()) return `Falta el nombre completo en ${et}.`;
+    if(!(r.cedula||"").trim()) return `Falta la cédula en ${et}.`;
+  }
+  return "";
+}
+
+/* =====================================================================
+   ENVÍO AL BACKEND
+   ===================================================================== */
+async function enviar(quiereServicio){
+  const banner=document.getElementById("banner-error");
+  banner.style.display="none";
+  const falta=primerFaltante();
+  if(falta){
+    banner.textContent="⚠️ "+falta;
+    banner.style.display="block"; window.scrollTo({top:0,behavior:"smooth"}); return;
+  }
+  const acepto=document.getElementById("chk-acepto").checked;
+  if(quiereServicio && !acepto){
+    banner.textContent="⚠️ Debes marcar la casilla de aceptación del contrato para continuar.";
+    banner.style.display="block";
+    document.getElementById("chk-acepto").scrollIntoView({behavior:"smooth",block:"center"}); return;
+  }
+  const ag=calcularAgregado();
+  const tit=rentas[0]||{};
+  const payload={
+    // Titular (contacto del contrato)
+    email:(tit.email||"").trim(), nombre:(tit.nombre||"").trim(), cedula:(tit.cedula||"").trim(),
+    precio2025:precio2025,
+    // Grupo familiar y descuento
+    grupo_sheet:grupoSheet,
+    num_rentas:ag.items.length,
+    descuento_aplica:ag.aplica, descuento_pct:15, piso_renta:PISO_DESCUENTO,
+    total_bruto:ag.totalBruto, total_neto:ag.totalNeto, descuento:ag.descuento,
+    precioNuevo:ag.totalNeto, // compatibilidad
+    rentas:ag.items.map(it=>({
+      tipo:it.r.tipo, parentesco:it.r.parentesco||"", nombre:(it.r.nombre||"").trim(),
+      cedula:(it.r.cedula||"").trim(), email: it.r.tipo==="titular"?(it.r.email||"").trim():"",
+      precio_bruto:it.bruto, precio_neto:it.neto, respuestas:it.r.resp
+    })),
+    acepto:acepto, quiere_servicio:quiereServicio, fecha_hora:fechaColombia(),
+  };
+  const btnSi=document.getElementById("btn-si"), btnNo=document.getElementById("btn-no");
+  btnSi.disabled=true; btnNo.disabled=true;
+  const btnActivo=quiereServicio?btnSi:btnNo;
+  const textoOriginal=btnActivo.innerHTML;
+  btnActivo.innerHTML=`<span class="spinner"></span>Enviando…`;
+  try{
+    await fetch(URL_BACKEND,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)});
+    mostrarConfirmacion(quiereServicio,payload);
+  }catch(e){
+    console.error("Error enviando:",e);
+    btnSi.disabled=false; btnNo.disabled=false; btnActivo.innerHTML=textoOriginal;
+    banner.textContent="⚠️ Hubo un problema al enviar. Verifica tu conexión e inténtalo de nuevo. Si persiste, escríbenos a rentas.chsas@gmail.com";
+    banner.style.display="block";
+  }
+}
+
+/* Fecha/hora Colombia (UTC-5) → "YYYY-MM-DD HH:MM:SS" */
+function fechaColombia(){
+  const ahora=new Date();
+  const utc=ahora.getTime()+ahora.getTimezoneOffset()*60000;
+  const col=new Date(utc-5*3600000);
+  const p=n=>String(n).padStart(2,"0");
+  return `${col.getFullYear()}-${p(col.getMonth()+1)}-${p(col.getDate())} ${p(col.getHours())}:${p(col.getMinutes())}:${p(col.getSeconds())}`;
+}
+
+/* =====================================================================
+   CONFIRMACIÓN
+   ===================================================================== */
+function mostrarConfirmacion(quiereServicio,payload){
+  document.getElementById("formulario").style.display="none";
+  const conf=document.getElementById("confirmacion"); conf.style.display="block";
+  const icono=document.getElementById("conf-icono"), titulo=document.getElementById("conf-titulo"), resumen=document.getElementById("conf-resumen");
+  if(quiereServicio){
+    conf.classList.remove("rechazo"); icono.textContent="✓";
+    titulo.textContent=`✅ ¡Gracias, ${payload.nombre}!`;
+    const rentasTxt = payload.num_rentas>1 ? `${payload.num_rentas} rentas del grupo familiar` : "1 renta";
+    const descTxt = payload.descuento_aplica ? `<p>• Descuento aplicado: <strong style="color:var(--gold)">−${formatoCOP(payload.descuento)}</strong> (15%)</p>` : "";
+    resumen.innerHTML=`
+      <p>Tu cotización ha sido registrada exitosamente.</p>
+      <p><strong>📋 Resumen:</strong></p>
+      <p>• Servicio: Declaración de Renta AG 2025 (${rentasTxt})</p>
+      ${descTxt}
+      <p>• Total a pagar: <strong>${formatoCOP(payload.precioNuevo)}</strong></p>
+      <p>• Estado: <strong style="color:var(--exito)">Aceptado</strong></p>
+      <p>📧 Recibirás una confirmación en <strong>${esc(payload.email)}</strong> con una copia del contrato firmado.</p>
+      <p>📅 Recuerda entregar los documentos <strong>UNA SEMANA ANTES</strong> de la fecha de análisis.</p>`;
+    sellarAceptado();
+  }else{
+    conf.classList.add("rechazo"); icono.textContent="•";
+    titulo.textContent=`Gracias por tu tiempo, ${payload.nombre}`;
+    resumen.innerHTML=`
+      <p>Tu cotización fue de <strong>${formatoCOP(payload.precioNuevo)}</strong> para la preparación de tu declaración de renta AG 2025.</p>
+      <p>Si cambias de opinión, puedes volver a este enlace o escribirnos a <strong>rentas.chsas@gmail.com</strong>.</p>`;
+  }
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+/* Estampa un sello "ACEPTADO" sobre el resumen, como un documento firmado */
+function sellarAceptado(){
+  const resumen=document.getElementById("conf-resumen");
+  if(!resumen || resumen.querySelector(".sello")) return;
+  const sello=document.createElement("div");
+  sello.className="sello";
+  sello.textContent="Aceptado";
+  resumen.appendChild(sello);
+}
+
+/* =====================================================================
+   INICIALIZACIÓN
+   ===================================================================== */
+/* Lee ?email=... de la URL (viene en el correo de invitación del Sheet) */
+function emailDeLaUrl(){
+  try{
+    const p=new URLSearchParams(window.location.search);
+    const e=(p.get("email")||"").trim();
+    return validarEmail(e)?e:"";
+  }catch(x){ return ""; }
+}
+
+document.addEventListener("DOMContentLoaded",()=>{
+  const emailUrl=emailDeLaUrl();
+  agregarRenta("titular",emailUrl?{email:emailUrl,origen:"sheet"}:null); // Renta 01 = titular
+  renderRentas();                 // pinta paneles + liquidación + contrato
+  cargarProfesionalActivo();      // a nombre de quién se emite el contrato
+  document.getElementById("btn-agregar").addEventListener("click",()=>{ agregarRenta("familiar"); renderRentas(); });
+  document.getElementById("btn-si").addEventListener("click",()=>enviar(true));
+  document.getElementById("btn-no").addEventListener("click",()=>enviar(false));
+
+  // Si el link ya trae el correo, buscamos al cliente y su grupo automáticamente
+  if(emailUrl){
+    const panel=document.getElementById("rentas-cont").firstElementChild;
+    if(panel) buscarCliente(rentas[0],panel);
+  }
+});
+</script>
+</body>
+</html>
