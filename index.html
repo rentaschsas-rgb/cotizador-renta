@@ -118,6 +118,23 @@
   .btn-agregar:hover{background:rgba(196,146,58,.12)}
   .btn-agregar:disabled{opacity:.5;cursor:not-allowed}
 
+  /* Pie de cada renta: cuántas faltan + botón Continuar / Finalizar */
+  .renta-pie{
+    display:flex;align-items:center;justify-content:flex-end;gap:14px;flex-wrap:wrap;
+    margin-top:18px;padding-top:16px;border-top:1px solid var(--linea);
+  }
+  .renta-faltan{font-size:12.5px;color:var(--gris);flex:1;min-width:140px}
+  .renta-faltan strong{color:var(--navy);font-weight:700}
+  .btn-paso{
+    padding:12px 26px;border:none;border-radius:10px;background:var(--navy);color:#fff;
+    font-size:14px;font-weight:700;letter-spacing:.3px;cursor:pointer;transition:all .18s;
+    display:inline-flex;align-items:center;gap:8px;
+  }
+  .btn-paso:hover:not(:disabled){background:var(--navy-soft);transform:translateY(-1px)}
+  .btn-paso:disabled{background:#C8CFD8;color:#8A94A2;cursor:not-allowed}
+  .btn-paso.final{background:var(--gold)}
+  .btn-paso.final:hover:not(:disabled){background:var(--gold-light)}
+
   /* Select de parentesco */
   select.txt{
     width:100%;padding:13px 15px;font-size:15px;border:1.5px solid var(--linea);border-radius:10px;
@@ -369,7 +386,7 @@
   <div class="hero-eyebrow">Año Gravable 2025 · Formulario 210</div>
   <h1>Cotización de tu Declaración de Renta</h1>
   <div class="diamante"><span class="rombo">◆</span></div>
-  <div class="sub">Cano Herrera Asesorías SAS · tu tarifa 2026 se liquida a medida que respondes</div>
+  <div class="sub">Cano Herrera Asesorías SAS</div>
 </header>
 
 <div class="contenedor">
@@ -675,6 +692,10 @@ function crearPanelRenta(r,i){
       <div class="preguntas-grid g-pat"></div>
       <div class="sub-eyebrow">Deducciones</div>
       <div class="preguntas-grid g-ded"></div>
+      <div class="renta-pie">
+        <span class="renta-faltan" id="faltan-${r._id}"></span>
+        <button type="button" class="btn-paso" id="paso-${r._id}"></button>
+      </div>
     </div>`;
 
   // Insertar las preguntas ligadas a esta renta
@@ -702,6 +723,10 @@ function crearPanelRenta(r,i){
     btnQuitar.addEventListener("click",(ev)=>{ ev.stopPropagation(); quitarRenta(r._id); });
   }
 
+  // Botón Continuar / Finalizar del pie de esta renta
+  const btnPaso=panel.querySelector(".btn-paso");
+  if(btnPaso) btnPaso.addEventListener("click",()=>avanzarDesde(r));
+
   // Plegar / desplegar el panel (clic en el encabezado). El subtotal queda visible.
   const head=panel.querySelector(".renta-head");
   head.addEventListener("click",()=>{
@@ -718,6 +743,68 @@ function renderRentas(){
   rentas.forEach((r,i)=>cont.appendChild(crearPanelRenta(r,i)));
   document.getElementById("btn-agregar").disabled = rentas.length>=MAX_RENTAS;
   refrescar();
+}
+
+/* =====================================================================
+   BOTÓN DE PASO DE CADA RENTA — "Continuar" o "Finalizar"
+   Si hay otra renta después (grupo familiar) → Continuar, y salta a ella.
+   Si es la última (o es la única) → Finalizar, y baja al contrato.
+   Se habilita solo cuando esa renta está completa.
+   ===================================================================== */
+function preguntasFaltantes(r){
+  const q=r.resp;
+  return Object.keys(nuevaResp()).filter(k=>q[k]===null||q[k]===undefined).length;
+}
+
+function actualizarBotonesPaso(){
+  rentas.forEach((r,i)=>{
+    const btn=document.getElementById("paso-"+r._id);
+    const avi=document.getElementById("faltan-"+r._id);
+    if(!btn) return;
+
+    const esUltima=(i===rentas.length-1);
+    const faltan=preguntasFaltantes(r);
+    const lista=(faltan===0);
+
+    btn.textContent = esUltima ? "Finalizar ✓" : "Continuar →";
+    btn.classList.toggle("final", esUltima);
+    btn.disabled = !lista;
+
+    if(avi){
+      if(lista){
+        avi.innerHTML = esUltima
+          ? "Todo listo. Continúa con el contrato."
+          : "Listo. Sigue con la siguiente renta.";
+      }else{
+        avi.innerHTML = `Falta${faltan>1?"n":""} <strong>${faltan}</strong> pregunta${faltan>1?"s":""} por responder.`;
+      }
+    }
+  });
+}
+
+/* Ir a la siguiente renta (o al contrato si es la última) */
+function avanzarDesde(r){
+  const i=rentas.findIndex(x=>x._id===r._id);
+  if(i<0) return;
+
+  // Plegar la que se acaba de terminar
+  r.colapsada=true;
+  const panelActual=document.getElementById("paso-"+r._id)?.closest(".renta");
+  if(panelActual) panelActual.classList.add("colapsada");
+
+  if(i < rentas.length-1){
+    // Desplegar la siguiente y llevar el foco allá
+    const sig=rentas[i+1];
+    sig.colapsada=false;
+    const panelSig=document.getElementById("paso-"+sig._id)?.closest(".renta");
+    if(panelSig){
+      panelSig.classList.remove("colapsada");
+      panelSig.scrollIntoView({behavior:"smooth",block:"start"});
+    }
+  }else{
+    // Última renta → bajar al contrato
+    document.getElementById("contrato").scrollIntoView({behavior:"smooth",block:"start"});
+  }
 }
 
 /* =====================================================================
@@ -751,6 +838,7 @@ function refrescar(pulse){
       badge.classList.toggle("incompleta", !lista);
     }
   });
+  actualizarBotonesPaso();
   // Pulso
   if(pulse!==false){
     const card=document.getElementById("precio-sticky");
