@@ -275,7 +275,10 @@
     font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1;
   }
   .precio-sticky .linea{display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;gap:16px}
-  .precio-sticky .linea span:last-child{font-family:var(--mono);font-size:12.5px;color:#DCE4EF;white-space:nowrap}
+  /* El nombre completo puede ser largo: que envuelva en vez de desbordar,
+     y que el valor nunca se parta ni se encoja. */
+  .precio-sticky .linea span:first-child{min-width:0;overflow-wrap:anywhere;line-height:1.35}
+  .precio-sticky .linea span:last-child{font-family:var(--mono);font-size:12.5px;color:#DCE4EF;white-space:nowrap;flex-shrink:0}
   .precio-sticky .divisor{border-top:1px solid var(--gold);opacity:.65;margin:12px 0 10px}
   .precio-sticky .total{display:flex;justify-content:space-between;align-items:baseline;gap:16px}
   .precio-sticky .total .lbl{font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold-light)}
@@ -596,7 +599,12 @@ function quitarRenta(id){ rentas=rentas.filter(r=>r._id!==id); renderRentas(); }
 function formatoCOP(n){ return "$"+Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,"."); }
 function esc(s){ return String(s==null?"":s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
 function escAttr(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;"); }
-function primerNombre(s){ return String(s||"").trim().split(/\s+/)[0]||""; }
+/* Nombre completo, solo con los espacios sobrantes limpiados.
+   No se intenta adivinar "el primer nombre": desde el Sheet los nombres vienen
+   como "APELLIDO1 APELLIDO2 NOMBRE1", pero cuando el cliente agrega un familiar
+   a mano los escribe al derecho ("Ana Gómez"). Sin saber cuál de los dos
+   formatos es, recortar palabras se equivoca; el nombre completo nunca. */
+function nombreLimpio(s){ return String(s||"").replace(/\s+/g," ").trim(); }
 
 /* =====================================================================
    CÁLCULO DE PRECIO DE UNA RENTA
@@ -863,7 +871,9 @@ function refrescar(pulse){
   // Liquidación (una línea por renta + descuento)
   let html="";
   ag.items.forEach(it=>{
-    const nom=it.r.nombre?" · "+esc(primerNombre(it.r.nombre)):"";
+    // Nombre COMPLETO: en un grupo familiar todos comparten apellido, así que
+    // mostrar solo una palabra dejaba líneas idénticas y no se sabía cuál era cuál.
+    const nom=it.r.nombre?" · "+esc(nombreLimpio(it.r.nombre)):"";
     html+=`<div class="linea"><span>${esc(etiquetaRenta(it.r))}${nom}</span><span>${formatoCOP(it.bruto)}</span></div>`;
   });
   if(ag.aplica) html+=`<div class="linea descuento"><span>Descuento familiar (−15%)</span><span>−${formatoCOP(ag.descuento)}</span></div>`;
