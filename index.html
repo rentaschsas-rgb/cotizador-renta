@@ -482,6 +482,7 @@ const PREG_INGRESOS=[
   {id:"ingreso_honorarios",icono:"📋",texto:"¿Recibe ingresos por HONORARIOS o prestación de servicios independientes?"},
   {id:"ingreso_arriendos",icono:"🏠",texto:"¿Recibe ingresos por ARRIENDOS de inmuebles?"},
   {id:"ingreso_dividendos",icono:"📊",texto:"¿Recibe ingresos por DIVIDENDOS o participación en empresas/sociedades?"},
+  {id:"ingreso_rendimientos",icono:"📈",texto:"¿Recibe ingresos o RENDIMIENTOS por inversiones en bancos? (CDT, cuentas de ahorro, fondos)"},
   {id:"ingreso_exterior",icono:"🌎",texto:"¿Recibe ingresos del EXTERIOR?"},
 ];
 const PREG_ACTIVOS_SN=[
@@ -499,9 +500,8 @@ const PREG_DEDUCCIONES=[
    ESTADO — LISTA DE RENTAS (titular + familiares)
    ===================================================================== */
 const MAX_RENTAS=8;          // tope de rentas por grupo familiar
-const DESCUENTO=0.15;        // 15% cuando hay más de una renta
-const PISO_DESCUENTO=220000; // el precio de una renta nunca baja de $220.000 aunque tenga descuento
-let rentas=[];              // {_id,tipo,parentesco,nombre,cedula,email,origen,resp:{}}
+const DESCUENTO=0.15;        // 15% cuando hay más de una renta (SIN piso)
+let rentas=[];              // {_id,tipo,parentesco,nombre,cedula,email,origen,precio2026,resp:{}}
 let idxSeq=0;               // id incremental para cada renta
 let clienteExistente=false, precio2025=null;
 let grupoSheet="";          // letra del grupo familiar detectada en el Sheet (A, B, …)
@@ -510,7 +510,7 @@ let busquedaHecha=false;    // evita repetir la búsqueda de grupo al salir del 
 /* Respuestas en blanco de una renta */
 function nuevaResp(){
   return {ingreso_salario:null,ingreso_pension:null,ingreso_honorarios:null,ingreso_arriendos:null,
-    ingreso_dividendos:null,ingreso_exterior:null,activos_cantidad:null,
+    ingreso_dividendos:null,ingreso_rendimientos:null,ingreso_exterior:null,activos_cantidad:null,
     inversiones_nacionales:null,activos_exterior:null,dependientes:null,
     credito_hipotecario:null,aportes_afc:null,ganancias_ocasionales:null};
 }
@@ -519,7 +519,9 @@ function agregarRenta(tipo,prefill){
   prefill=prefill||{};
   const r={_id:++idxSeq,tipo:tipo,parentesco:prefill.parentesco||"",
     nombre:prefill.nombre||"",cedula:prefill.cedula||"",email:prefill.email||"",
-    origen:prefill.origen||"manual",colapsada:false,resp:nuevaResp()};
+    origen:prefill.origen||"manual",
+    precio2026:(prefill.precio2026>0?Number(prefill.precio2026):null), // precio del Sheet
+    colapsada:false,resp:nuevaResp()};
   rentas.push(r);
   return r;
 }
@@ -537,7 +539,7 @@ function primerNombre(s){ return String(s||"").trim().split(/\s+/)[0]||""; }
 function calcularPrecioRenta(r){
   const q=r.resp;
   const d={base:PRECIO_BASE,fuentes:0,exterior_ing:0,activos:0,inversiones:0,activos_ext:0,afc:0,ganancias:0};
-  const fuentes=[q.ingreso_salario,q.ingreso_pension,q.ingreso_honorarios,q.ingreso_arriendos,q.ingreso_dividendos];
+  const fuentes=[q.ingreso_salario,q.ingreso_pension,q.ingreso_honorarios,q.ingreso_arriendos,q.ingreso_dividendos,q.ingreso_rendimientos];
   const cuantasSi=fuentes.filter(v=>v===true).length;
   if(cuantasSi>1) d.fuentes=(cuantasSi-1)*COSTO_FUENTE_EXTRA;
   if(q.ingreso_exterior===true) d.exterior_ing=COSTO_EXTERIOR_ING;
@@ -551,19 +553,27 @@ function calcularPrecioRenta(r){
   return d;
 }
 
-/* ¿Están respondidas las 13 preguntas de una renta? */
+/* ¿Están respondidas las 14 preguntas de una renta? */
 function rentaCompleta(r){
   const q=r.resp;
   return Object.keys(nuevaResp()).every(k=>q[k]!==null && q[k]!==undefined);
+}
+
+/* Precio BRUTO de una renta.
+   Si la persona ya está en el Sheet con su PRECIO 2026 (tu fórmula), ese manda.
+   Si es alguien nuevo que no está en el Sheet, se calcula con las preguntas. */
+function brutoDeRenta(r){
+  return (r.precio2026>0) ? Math.round(r.precio2026) : calcularPrecioRenta(r).total;
 }
 
 /* Cálculo agregado del grupo familiar (con descuento del 15% a todas si hay >1) */
 function calcularAgregado(){
   const aplica=rentas.length>=2;
   const items=rentas.map(r=>{
-    const bruto=calcularPrecioRenta(r).total;
-    // 15% de descuento, pero nunca por debajo del piso ($220.000) ni por encima del bruto
-    const neto=aplica?Math.min(bruto,Math.max(Math.round(bruto*(1-DESCUENTO)),PISO_DESCUENTO)):bruto;
+    const bruto=brutoDeRenta(r);
+    // 15% de descuento sobre el precio 2026. Sin piso: si tu precio ya es bajo,
+    // el descuento se aplica igual y respeta lo que definiste en el Sheet.
+    const neto=aplica?Math.round(bruto*(1-DESCUENTO)):bruto;
     return {r,bruto,neto};
   });
   const totalBruto=items.reduce((s,it)=>s+it.bruto,0);
@@ -762,7 +772,7 @@ function actualizarContrato(ag){
     filas+=`<tr><td>${esc(it.r.nombre||"—")}</td><td>${esc(etiquetaRenta(it.r))}</td><td>C.C. ${esc(it.r.cedula||"—")}</td><td class="num">${formatoCOP(it.bruto)}</td></tr>`;
   });
   const filaDesc = ag.aplica
-    ? `<tr class="desc"><td colspan="3">Descuento por ${n} rentas del grupo familiar (−15%, piso $220.000 por renta)</td><td class="num">−${formatoCOP(ag.descuento)}</td></tr>`
+    ? `<tr class="desc"><td colspan="3">Descuento por ${n} rentas del grupo familiar (−15%)</td><td class="num">−${formatoCOP(ag.descuento)}</td></tr>`
     : "";
   const objeto = n>1
     ? "las declaraciones de renta relacionadas en la cláusula 4"
@@ -813,7 +823,7 @@ function actualizarContrato(ag){
           <tr class="total"><td colspan="3">Total a pagar</td><td class="num">${formatoCOP(ag.totalNeto)}</td></tr>
         </tbody>
       </table>
-      ${ag.aplica?`<div class="doc-destacado">Incluye <strong>15% de descuento</strong> por declarar ${n} rentas de un mismo grupo familiar. El valor de cada renta no baja de <strong>$220.000 COP</strong>.</div>`:``}</div>
+      ${ag.aplica?`<div class="doc-destacado">Incluye <strong>15% de descuento</strong> por declarar ${n} rentas de un mismo grupo familiar.</div>`:``}</div>
 
     <div class="doc-clausula"><h4><span class="num">5</span>Multa por incumplimiento en entrega de documentos</h4>
       <p>Si el CLIENTE no entrega la totalidad de los documentos dentro del plazo establecido (una semana antes de la fecha de análisis), se aplicará un cobro adicional de <strong>SETENTA MIL PESOS ($70.000 COP)</strong> por gestión extemporánea, dada la complejidad operativa de procesar información fuera de los tiempos acordados y el riesgo de incumplimiento ante la DIAN.</p></div>
@@ -888,6 +898,9 @@ async function buscarCliente(r,panel){
       if(nomTit){ r.nombre=nomTit; panel.querySelector(".f-nombre").value=nomTit; }
       if(cedTit){ r.cedula=cedTit; panel.querySelector(".f-cedula").value=cedTit; }
       r.origen="sheet";
+      // Precio 2026 del titular (tu fórmula del Sheet)
+      const p26Tit=cli.precio2026||(data.miembros&&data.miembros[0]?data.miembros[0].precio2026:null);
+      r.precio2026=(p26Tit>0)?Number(p26Tit):null;
 
       // ── CASO B con GRUPO: crear una renta por cada familiar del Sheet ──
       const miembros=data.miembros||[];
@@ -899,7 +912,8 @@ async function buscarCliente(r,panel){
           const cedM=String(m.cedula||"").trim();
           if(cedM && cedM===cedTitNorm) return;               // ese es el titular
           if(rentas.some(x=>String(x.cedula||"").trim()===cedM)) return; // ya existe
-          agregarRenta("familiar",{nombre:m.nombre||"",cedula:cedM,parentesco:"Familiar",origen:"sheet"});
+          agregarRenta("familiar",{nombre:m.nombre||"",cedula:cedM,parentesco:"Familiar",
+                                   origen:"sheet",precio2026:m.precio2026});
           agregados++;
         });
       }
@@ -1015,7 +1029,7 @@ async function enviar(quiereServicio){
     // Grupo familiar y descuento
     grupo_sheet:grupoSheet,
     num_rentas:ag.items.length,
-    descuento_aplica:ag.aplica, descuento_pct:15, piso_renta:PISO_DESCUENTO,
+    descuento_aplica:ag.aplica, descuento_pct:15,
     total_bruto:ag.totalBruto, total_neto:ag.totalNeto, descuento:ag.descuento,
     precioNuevo:ag.totalNeto, // compatibilidad
     rentas:ag.items.map(it=>({
