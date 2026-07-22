@@ -118,6 +118,12 @@
   .btn-agregar:hover{background:rgba(196,146,58,.12)}
   .btn-agregar:disabled{opacity:.5;cursor:not-allowed}
 
+  /* Aviso de que todo se refiere al año gravable 2025 */
+  .aviso-anio{
+    background:var(--gold-pale);border-left:4px solid var(--gold);border-radius:8px;
+    padding:11px 15px;margin:0 0 18px;font-size:13px;line-height:1.5;color:var(--navy);
+  }
+
   /* Elegir modalidad: contrato firmado o solo compromisos */
   .modo-opciones{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0 18px}
   @media(max-width:640px){ .modo-opciones{grid-template-columns:1fr} }
@@ -413,6 +419,7 @@
           <div class="seccion-eyebrow"><span class="rombo">◆</span> Sección 01 · Rentas a declarar</div>
           <div class="seccion-titulo">Tu declaración y la de tu familia</div>
           <p class="ayuda">Empieza con tu propia declaración. Agrega una renta por cada familiar (cónyuge, hijos, padres): al declarar <strong>más de una renta obtienes 15% de descuento</strong> en todas.</p>
+          <div class="aviso-anio">📅 <strong>Importante:</strong> todas las preguntas se refieren al <strong>año gravable 2025</strong> (del 1 de enero al 31 de diciembre de 2025), no a tu situación actual.</div>
           <div id="rentas-cont"></div>
           <button type="button" class="btn-agregar" id="btn-agregar">＋ Agregar otra renta (cónyuge, hijo, padre…)</button>
         </div>
@@ -528,25 +535,30 @@ let profesionalActivo = PROFESIONALES.johanna; // por defecto
 /* =====================================================================
    DEFINICIÓN DE PREGUNTAS
    ===================================================================== */
+/* TODAS las preguntas se refieren al AÑO GRAVABLE 2025, no a la situación de
+   hoy. Antes estaban en presente ("¿Recibe…?") y un cliente que cambió de
+   trabajo o vendió un bien a finales de 2025 respondía pensando en 2026.
+   Los ingresos van en pasado ("durante 2025") y el patrimonio se ancla al
+   corte fiscal ("a 31 de diciembre de 2025"). */
 const PREG_INGRESOS=[
-  {id:"ingreso_salario",icono:"💼",texto:"¿Recibe ingresos por SALARIO como empleado?"},
-  {id:"ingreso_pension",icono:"🏦",texto:"¿Recibe ingresos por PENSIÓN?"},
-  {id:"ingreso_honorarios",icono:"📋",texto:"¿Recibe ingresos por HONORARIOS o prestación de servicios independientes?"},
-  {id:"ingreso_arriendos",icono:"🏠",texto:"¿Recibe ingresos por ARRIENDOS de inmuebles?"},
-  {id:"ingreso_dividendos",icono:"📊",texto:"¿Recibe ingresos por DIVIDENDOS o participación en empresas/sociedades?"},
-  {id:"ingreso_rendimientos",icono:"📈",texto:"¿Recibe ingresos o RENDIMIENTOS por inversiones en bancos? (CDT, cuentas de ahorro, fondos)"},
-  {id:"ingreso_exterior",icono:"🌎",texto:"¿Recibe ingresos del EXTERIOR?"},
+  {id:"ingreso_salario",icono:"💼",texto:"Durante 2025, ¿recibió ingresos por SALARIO como empleado?"},
+  {id:"ingreso_pension",icono:"🏦",texto:"Durante 2025, ¿recibió ingresos por PENSIÓN?"},
+  {id:"ingreso_honorarios",icono:"📋",texto:"Durante 2025, ¿recibió ingresos por HONORARIOS o prestación de servicios independientes?"},
+  {id:"ingreso_arriendos",icono:"🏠",texto:"Durante 2025, ¿recibió ingresos por ARRIENDOS de inmuebles?"},
+  {id:"ingreso_dividendos",icono:"📊",texto:"Durante 2025, ¿recibió ingresos por DIVIDENDOS o participación en empresas/sociedades?"},
+  {id:"ingreso_rendimientos",icono:"📈",texto:"Durante 2025, ¿recibió ingresos o RENDIMIENTOS por inversiones en bancos? (CDT, cuentas de ahorro, fondos)"},
+  {id:"ingreso_exterior",icono:"🌎",texto:"Durante 2025, ¿recibió ingresos del EXTERIOR?"},
 ];
 const PREG_ACTIVOS_SN=[
-  {id:"inversiones_nacionales",icono:"💰",texto:"¿Tiene inversiones financieras nacionales? (CDT, fondos, acciones, fiducias)"},
-  {id:"activos_exterior",icono:"🌐",texto:"¿Tiene activos o cuentas bancarias en el EXTERIOR?"},
+  {id:"inversiones_nacionales",icono:"💰",texto:"A 31 de diciembre de 2025, ¿tenía inversiones financieras nacionales? (CDT, fondos, acciones, fiducias)"},
+  {id:"activos_exterior",icono:"🌐",texto:"A 31 de diciembre de 2025, ¿tenía activos o cuentas bancarias en el EXTERIOR?"},
 ];
 const PREG_DEDUCCIONES=[
-  {id:"dependientes",icono:"👨‍👩‍👧",texto:"¿Tiene dependientes económicos? (hijos, padres, cónyuge)"},
-  {id:"credito_hipotecario",icono:"🏡",texto:"¿Tiene crédito hipotecario o pagos de vivienda?"},
-  {id:"aportes_afc",icono:"🐖",texto:"¿Realizó aportes voluntarios a pensión o AFC durante 2025?"},
-  {id:"vehiculo_hibrido",icono:"🚗",texto:"¿Ha comprado algún vehículo híbrido o eléctrico en los últimos 10 años? (da beneficio en renta)"},
-  {id:"ganancias_ocasionales",icono:"🎰",texto:"¿Tuvo ventas de activos, herencias, loterías o ganancias ocasionales durante 2025?"},
+  {id:"dependientes",icono:"👨‍👩‍👧",texto:"Durante 2025, ¿tuvo dependientes económicos a cargo? (hijos, padres, cónyuge)"},
+  {id:"credito_hipotecario",icono:"🏡",texto:"Durante 2025, ¿pagó intereses de crédito hipotecario o de vivienda?"},
+  {id:"aportes_afc",icono:"🐖",texto:"Durante 2025, ¿realizó aportes voluntarios a pensión o AFC?"},
+  {id:"vehiculo_hibrido",icono:"🚗",texto:"¿Compró algún vehículo híbrido o eléctrico entre 2016 y 2025? (últimos 10 años, da beneficio en renta)"},
+  {id:"ganancias_ocasionales",icono:"🎰",texto:"Durante 2025, ¿tuvo ventas de activos, herencias, loterías o ganancias ocasionales?"},
 ];
 
 /* =====================================================================
@@ -654,7 +666,7 @@ function crearPreguntaActivos(r){
   const div=document.createElement("div");
   div.className="pregunta columna";
   div.innerHTML=`<div class="fila"><span class="icono">🏗️</span>
-    <span class="texto">¿Cuántos activos posee? (inmuebles, vehículos, cuentas bancarias, inversiones)</span></div>
+    <span class="texto">A 31 de diciembre de 2025, ¿cuántos activos poseía? (inmuebles, vehículos, cuentas bancarias, inversiones)</span></div>
     <div class="opciones">
       <button type="button" data-val="menos5">Menos de 5 activos</button>
       <button type="button" data-val="entre5y15">Entre 5 y 15 activos</button>
