@@ -493,6 +493,7 @@ const PREG_DEDUCCIONES=[
   {id:"dependientes",icono:"👨‍👩‍👧",texto:"¿Tiene dependientes económicos? (hijos, padres, cónyuge)"},
   {id:"credito_hipotecario",icono:"🏡",texto:"¿Tiene crédito hipotecario o pagos de vivienda?"},
   {id:"aportes_afc",icono:"🐖",texto:"¿Realizó aportes voluntarios a pensión o AFC durante 2025?"},
+  {id:"vehiculo_hibrido",icono:"🚗",texto:"¿Ha comprado algún vehículo híbrido o eléctrico en los últimos 10 años? (da beneficio en renta)"},
   {id:"ganancias_ocasionales",icono:"🎰",texto:"¿Tuvo ventas de activos, herencias, loterías o ganancias ocasionales durante 2025?"},
 ];
 
@@ -512,7 +513,7 @@ function nuevaResp(){
   return {ingreso_salario:null,ingreso_pension:null,ingreso_honorarios:null,ingreso_arriendos:null,
     ingreso_dividendos:null,ingreso_rendimientos:null,ingreso_exterior:null,activos_cantidad:null,
     inversiones_nacionales:null,activos_exterior:null,dependientes:null,
-    credito_hipotecario:null,aportes_afc:null,ganancias_ocasionales:null};
+    credito_hipotecario:null,aportes_afc:null,vehiculo_hibrido:null,ganancias_ocasionales:null};
 }
 function agregarRenta(tipo,prefill){
   if(rentas.length>=MAX_RENTAS) return null;
@@ -553,7 +554,7 @@ function calcularPrecioRenta(r){
   return d;
 }
 
-/* ¿Están respondidas las 14 preguntas de una renta? */
+/* ¿Están respondidas TODAS las preguntas de una renta? (el número sale solo de nuevaResp) */
 function rentaCompleta(r){
   const q=r.resp;
   return Object.keys(nuevaResp()).every(k=>q[k]!==null && q[k]!==undefined);
