@@ -118,6 +118,20 @@
   .btn-agregar:hover{background:rgba(196,146,58,.12)}
   .btn-agregar:disabled{opacity:.5;cursor:not-allowed}
 
+  /* Elegir modalidad: contrato firmado o solo compromisos */
+  .modo-opciones{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0 18px}
+  @media(max-width:640px){ .modo-opciones{grid-template-columns:1fr} }
+  .modo-op{
+    display:flex;align-items:flex-start;gap:10px;padding:14px 16px;cursor:pointer;
+    border:1.5px solid var(--linea);border-radius:12px;background:#fff;transition:all .18s;
+  }
+  .modo-op:hover{border-color:var(--gold)}
+  .modo-op input{margin-top:3px;accent-color:var(--navy);flex-shrink:0}
+  .modo-op.sel{border-color:var(--navy);background:rgba(8,38,78,.04);box-shadow:0 0 0 1px var(--navy) inset}
+  .modo-txt{display:flex;flex-direction:column;gap:3px}
+  .modo-txt strong{font-size:14px;color:var(--navy);font-weight:700}
+  .modo-txt em{font-size:12px;color:var(--gris);font-style:normal;line-height:1.45}
+
   /* Pie de cada renta: cuántas faltan + botón Continuar / Finalizar */
   .renta-pie{
     display:flex;align-items:center;justify-content:flex-end;gap:14px;flex-wrap:wrap;
@@ -417,14 +431,35 @@
       <!-- ===== FILA 2 · CONTRATO Y FIRMA ===== -->
       <div class="col-contrato">
         <div class="seccion">
-          <div class="seccion-eyebrow"><span class="rombo">◆</span> Sección 02 · Firma electrónica</div>
-          <div class="seccion-titulo">Contrato y aceptación</div>
+          <div class="seccion-eyebrow"><span class="rombo">◆</span> Sección 02 · Aceptación</div>
+          <div class="seccion-titulo">¿Cómo prefieres formalizar el servicio?</div>
+
+          <p class="ayuda">Puedes firmar el contrato completo o, si prefieres no firmar un contrato,
+             aceptar únicamente los compromisos esenciales. <strong>En ambos casos prestamos el mismo servicio.</strong></p>
+
+          <div class="modo-opciones">
+            <label class="modo-op" id="modo-op-contrato">
+              <input type="radio" name="modo" value="contrato" checked>
+              <span class="modo-txt">
+                <strong>📄 Firmar el contrato</strong>
+                <em>Documento completo con firma electrónica. Recibes el PDF por correo.</em>
+              </span>
+            </label>
+            <label class="modo-op" id="modo-op-compromiso">
+              <input type="radio" name="modo" value="compromiso">
+              <span class="modo-txt">
+                <strong>🤝 Solo los compromisos esenciales</strong>
+                <em>Sin contrato firmado. Aceptas expresamente los puntos de abajo.</em>
+              </span>
+            </label>
+          </div>
+
           <div class="doc-contrato" id="contrato"></div>
 
           <div class="aceptacion">
             <label>
               <input type="checkbox" id="chk-acepto">
-              <span>He leído y <strong>ACEPTO</strong> los términos y condiciones del contrato de servicios tributarios.</span>
+              <span id="txt-acepto">He leído y <strong>ACEPTO</strong> los términos y condiciones del contrato de servicios tributarios.</span>
             </label>
             <ul>
               <li>✓ Entregaré los documentos <strong>UNA SEMANA ANTES</strong> de la fecha acordada</li>
@@ -846,6 +881,41 @@ function refrescar(pulse){
   }
   actualizarContrato(ag);
 }
+/* =====================================================================
+   MODALIDAD DE ACEPTACIÓN
+   "contrato"   → contrato completo con firma electrónica (por defecto)
+   "compromiso" → sin contrato firmado; solo acepta los puntos esenciales
+   A nadie se le puede obligar a firmar, pero el compromiso sí queda
+   registrado con fecha, correo e IP.
+   ===================================================================== */
+function modoAceptacion(){
+  const sel=document.querySelector('input[name="modo"]:checked');
+  return sel ? sel.value : "contrato";
+}
+
+function aplicarModo(){
+  const modo=modoAceptacion();
+  const firma=(modo==="contrato");
+
+  // Resaltar la tarjeta elegida
+  document.querySelectorAll(".modo-op").forEach(op=>{
+    op.classList.toggle("sel", op.querySelector("input").checked);
+  });
+
+  // El contrato solo se muestra si va a firmarlo
+  const doc=document.getElementById("contrato");
+  if(doc) doc.style.display = firma ? "" : "none";
+
+  // Y el texto de la casilla cambia según el caso
+  const txt=document.getElementById("txt-acepto");
+  if(txt){
+    txt.innerHTML = firma
+      ? 'He leído y <strong>ACEPTO</strong> los términos y condiciones del contrato de servicios tributarios.'
+      : 'No deseo firmar un contrato, pero <strong>ME COMPROMETO EXPRESAMENTE</strong> a los siguientes puntos:';
+  }
+  refrescar(false);
+}
+
 function actualizarContrato(ag){
   ag = ag || calcularAgregado();
   const tit=rentas[0]||{};
@@ -1007,6 +1077,13 @@ async function buscarCliente(r,panel){
         });
       }
 
+      // Con un grupo grande, ver todos los formularios abiertos abruma. Se deja
+      // desplegado SOLO el primero; los demás quedan plegados y se van abriendo
+      // uno a uno con el botón "Continuar".
+      if(agregados>0){
+        rentas.forEach((x,idx)=>{ x.colapsada = (idx!==0); });
+      }
+
       const precioTxt=precio2025?formatoCOP(precio2025):"(no registrada)";
       const htmlMsg=(agregados>0)
         ? `Hola <strong>${esc(nomTit)}</strong>. Detectamos <strong>${agregados+1} declaraciones</strong> asociadas a tu grupo familiar; las cotizamos una por una y obtienes <strong>15% de descuento</strong>. Tu tarifa el año pasado fue de <strong>${precioTxt}</strong>.`
@@ -1104,8 +1181,11 @@ async function enviar(quiereServicio){
     banner.style.display="block"; window.scrollTo({top:0,behavior:"smooth"}); return;
   }
   const acepto=document.getElementById("chk-acepto").checked;
+  const modo=modoAceptacion();
   if(quiereServicio && !acepto){
-    banner.textContent="⚠️ Debes marcar la casilla de aceptación del contrato para continuar.";
+    banner.textContent = (modo==="contrato")
+      ? "⚠️ Debes marcar la casilla de aceptación del contrato para continuar."
+      : "⚠️ Debes marcar la casilla de compromiso para continuar.";
     banner.style.display="block";
     document.getElementById("chk-acepto").scrollIntoView({behavior:"smooth",block:"center"}); return;
   }
@@ -1127,6 +1207,8 @@ async function enviar(quiereServicio){
       precio_bruto:it.bruto, precio_neto:it.neto, respuestas:it.r.resp
     })),
     acepto:acepto, quiere_servicio:quiereServicio, fecha_hora:fechaColombia(),
+    // Modalidad elegida: "contrato" (firma) o "compromiso" (sin firmar)
+    modo_aceptacion:modo, firma_contrato:(modo==="contrato"),
   };
   const btnSi=document.getElementById("btn-si"), btnNo=document.getElementById("btn-no");
   btnSi.disabled=true; btnNo.disabled=true;
@@ -1211,6 +1293,8 @@ document.addEventListener("DOMContentLoaded",()=>{
   agregarRenta("titular",emailUrl?{email:emailUrl,origen:"sheet"}:null); // Renta 01 = titular
   renderRentas();                 // pinta paneles + liquidación + contrato
   cargarProfesionalActivo();      // a nombre de quién se emite el contrato
+  document.querySelectorAll('input[name="modo"]').forEach(rb=>rb.addEventListener("change",aplicarModo));
+  aplicarModo();
   document.getElementById("btn-agregar").addEventListener("click",()=>{ agregarRenta("familiar"); renderRentas(); });
   document.getElementById("btn-si").addEventListener("click",()=>enviar(true));
   document.getElementById("btn-no").addEventListener("click",()=>enviar(false));
