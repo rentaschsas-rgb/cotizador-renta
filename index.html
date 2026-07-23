@@ -124,6 +124,19 @@
     padding:11px 15px;margin:0 0 18px;font-size:13px;line-height:1.5;color:var(--navy);
   }
 
+  /* Aviso de que se recuperó un borrador guardado en el equipo del cliente */
+  .aviso-borrador{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    background:#EAF4EE;border-left:4px solid var(--exito,#2E7D5B);border-radius:8px;
+    padding:11px 15px;margin:0 0 18px;font-size:13px;line-height:1.5;color:#1F5C42;
+  }
+  .aviso-borrador[hidden]{display:none}
+  .aviso-borrador button{
+    background:transparent;border:1px solid #9CC4AE;color:#1F5C42;border-radius:8px;
+    padding:6px 12px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;
+  }
+  .aviso-borrador button:hover{background:#DCEAE2}
+
   /* ===================== DIÁLOGO TÉRMINOS Y CONDICIONES ===================== */
   .link-tyc{color:var(--navy);text-decoration:underline;text-underline-offset:3px;
     text-decoration-color:var(--gold);text-decoration-thickness:2px;cursor:pointer;font-weight:700}
@@ -456,6 +469,10 @@
           <div class="seccion-titulo">Tu declaración y la de tu familia</div>
           <p class="ayuda">Empieza con tu propia declaración. Agrega una renta por cada familiar (cónyuge, hijos, padres): al declarar <strong>más de una renta obtienes 15% de descuento</strong> en todas.</p>
           <div class="aviso-anio">📅 <strong>Importante:</strong> todas las preguntas se refieren al <strong>año gravable 2025</strong> (del 1 de enero al 31 de diciembre de 2025), no a tu situación actual.</div>
+          <div class="aviso-borrador" id="aviso-borrador" hidden>
+            <span>💾 <strong>Recuperamos tus respuestas.</strong> Puedes seguir donde ibas.</span>
+            <button type="button" id="btn-descartar-borrador">Empezar de cero</button>
+          </div>
           <div id="rentas-cont"></div>
           <button type="button" class="btn-agregar" id="btn-agregar">＋ Agregar otra renta (cónyuge, hijo, padre…)</button>
         </div>
@@ -801,6 +818,153 @@ function escAttr(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/
 function nombreLimpio(s){ return String(s||"").replace(/\s+/g," ").trim(); }
 
 /* =====================================================================
+   BORRADOR LOCAL — que no se pierda lo ya respondido
+
+   Antes todo vivía solo en memoria: recargar la página, perder la señal,
+   volver a abrir el link del correo o cerrar el navegador sin querer
+   borraba las 15 preguntas ya contestadas. Ahora se guarda un borrador en
+   el equipo del propio cliente (localStorage) y se restaura al volver.
+
+   El borrador NO sale del navegador: no se envía a ningún servidor hasta
+   que el cliente da "SÍ QUIERO", y se borra apenas termina.
+   ===================================================================== */
+const CACHE_PREFIJO="renta2026:", CACHE_ANONIMO=CACHE_PREFIJO+"anonimo",
+      CACHE_ULTIMO=CACHE_PREFIJO+"__ultimo", CACHE_DIAS=45;
+let borradorRestaurado=false, claveActual=null;
+
+/* Una llave por correo: en un equipo compartido (o cuando tú misma pruebas
+   con varios clientes) los borradores no se mezclan. */
+function claveCache(){
+  const e=(emailDeLaUrl()||(rentas[0]&&rentas[0].email)||"").trim().toLowerCase();
+  return e?(CACHE_PREFIJO+e):CACHE_ANONIMO;
+}
+
+/* Dónde puede estar el borrador de quien está abriendo ahora.
+   · Si el link trae el correo, SOLO se mira su propia llave: en un equipo
+     compartido nadie debe heredar el borrador de otra persona.
+   · Si no trae correo, se acepta además el último borrador de este equipo,
+     porque el cliente pudo haber escrito su correo a mano después de empezar
+     y la llave quedó guardada a ese nombre, no bajo "anónimo". */
+function clavesPosibles(){
+  const propia=claveCache();
+  if(emailDeLaUrl()) return [propia];
+  let ultima=null;
+  try{ ultima=localStorage.getItem(CACHE_ULTIMO); }catch(x){}
+  return (ultima && ultima!==propia) ? [propia,ultima] : [propia];
+}
+
+function guardarBorrador(){
+  try{
+    const clave=claveCache();
+    localStorage.setItem(clave,JSON.stringify({
+      v:1, ts:Date.now(),
+      rentas:rentas.map(r=>({tipo:r.tipo,parentesco:r.parentesco,nombre:r.nombre,
+        cedula:r.cedula,email:r.email,origen:r.origen,precio2026:r.precio2026,resp:r.resp}))
+    }));
+    localStorage.setItem(CACHE_ULTIMO,clave);
+    // Si el cliente escribió su correo a mitad de camino, la llave cambia:
+    // no dejar atrás una copia vieja bajo la llave anterior.
+    if(claveActual && claveActual!==clave) localStorage.removeItem(claveActual);
+    claveActual=clave;
+  }catch(x){ /* incógnito o sin espacio: el formulario funciona igual, solo sin borrador */ }
+}
+
+/* Se guarda con un respiro para no escribir en disco en cada tecla */
+let timerBorrador=null;
+function programarGuardado(){
+  if(timerBorrador) clearTimeout(timerBorrador);
+  timerBorrador=setTimeout(guardarBorrador,400);
+}
+
+function leerBorrador(){
+  const claves=clavesPosibles();
+  for(let i=0;i<claves.length;i++){
+    let b=null;
+    try{
+      const crudo=localStorage.getItem(claves[i]);
+      if(!crudo) continue;
+      b=JSON.parse(crudo);
+    }catch(x){ continue; }
+    if(!b || b.v!==1 || !Array.isArray(b.rentas)) continue;
+    // Un borrador viejo es de otra temporada: mejor no resucitarlo
+    if(Date.now()-(b.ts||0) > CACHE_DIAS*86400000){ borrarBorrador(); return null; }
+    claveActual=claves[i];
+    return b;
+  }
+  return null;
+}
+
+function borrarBorrador(){
+  try{
+    clavesPosibles().forEach(k=>localStorage.removeItem(k));
+    if(claveActual) localStorage.removeItem(claveActual);
+    localStorage.removeItem(CACHE_ANONIMO);
+    localStorage.removeItem(CACHE_ULTIMO);
+  }catch(x){}
+}
+
+/* Vuelca el borrador sobre las rentas actuales.
+   El Sheet manda en nombre, cédula y precio (es la fuente de verdad); el
+   borrador solo aporta lo que el cliente escribió: las respuestas, el
+   parentesco, y los familiares que agregó a mano y no están en el Sheet. */
+function restaurarBorrador(){
+  const b=leerBorrador();
+  if(!b) return false;
+  const usados=new Set();
+  const claves=Object.keys(nuevaResp());
+  let algo=false;
+
+  b.rentas.forEach((g,i)=>{
+    const ced=String(g.cedula||"").trim();
+    let r=null;
+    // 1) por cédula — es lo único que identifica sin ambigüedad
+    if(ced) r=rentas.find(x=>!usados.has(x._id) && String(x.cedula||"").trim()===ced) || null;
+    // 2) el titular es único
+    if(!r && g.tipo==="titular") r=rentas.find(x=>!usados.has(x._id) && x.tipo==="titular") || null;
+    // 3) por posición, solo si esa renta aún no tiene cédula propia (si ya la
+    //    tiene, es otra persona y pisarla sería peor que perder el borrador)
+    if(!r){
+      const cand=rentas[i];
+      if(cand && !usados.has(cand._id) && !String(cand.cedula||"").trim()) r=cand;
+    }
+    // 4) familiar agregado a mano que todavía no existe → recrearlo
+    if(!r && g.tipo!=="titular"){
+      r=agregarRenta("familiar",{nombre:g.nombre,cedula:g.cedula,parentesco:g.parentesco,
+                                 origen:g.origen,precio2026:g.precio2026});
+    }
+    if(!r) return;
+    usados.add(r._id);
+
+    claves.forEach(k=>{ if(g.resp && g.resp[k]!==undefined && g.resp[k]!==null && (r.resp[k]===null||r.resp[k]===undefined)) r.resp[k]=g.resp[k]; });
+    // "Familiar" es el marcador genérico con que llegan del Sheet, no una
+    // elección del cliente: si él ya había puesto "Cónyuge" o "Hija", manda eso.
+    const genericoActual = !r.parentesco || r.parentesco==="Familiar";
+    if(genericoActual && g.parentesco && g.parentesco!=="Familiar") r.parentesco=g.parentesco;
+    if(!r.nombre && g.nombre)         r.nombre=g.nombre;
+    if(!r.cedula && g.cedula)         r.cedula=g.cedula;
+    if(r.tipo==="titular" && !r.email && g.email) r.email=g.email;
+    algo=true;
+  });
+
+  if(algo && !borradorRestaurado){
+    borradorRestaurado=true;
+    const aviso=document.getElementById("aviso-borrador");
+    if(aviso) aviso.hidden=false;
+  }
+  return algo;
+}
+
+/* "Empezar de cero": borra el borrador y recarga limpio. */
+function descartarBorrador(){
+  borrarBorrador();
+  rentas.forEach(r=>{ r.resp=nuevaResp(); });
+  borradorRestaurado=false;
+  const aviso=document.getElementById("aviso-borrador");
+  if(aviso) aviso.hidden=true;
+  renderRentas();
+}
+
+/* =====================================================================
    CÁLCULO DE PRECIO DE UNA RENTA
    ===================================================================== */
 function calcularPrecioRenta(r){
@@ -1116,6 +1280,7 @@ function refrescar(pulse){
     }
   });
   actualizarBotonesPaso();
+  programarGuardado();   // cada cambio queda a salvo en el equipo del cliente
   // Pulso
   if(pulse!==false){
     const card=document.getElementById("precio-sticky");
@@ -1415,7 +1580,11 @@ async function buscarCliente(r,panel){
         ? `Hola <strong>${esc(nomTit)}</strong>. Detectamos <strong>${agregados+1} declaraciones</strong> asociadas a tu grupo familiar; las cotizamos una por una y obtienes <strong>15% de descuento</strong>. Tu tarifa el año pasado fue de <strong>${precioTxt}</strong>.`
         : `Hola <strong>${esc(nomTit)}</strong>. Tu tarifa el año pasado fue de <strong>${precioTxt}</strong>. Completa las preguntas para conocer tu nueva tarifa.`;
 
-      if(agregados>0){
+      // El grupo del Sheet ya está armado: ahora sí se puede volcar encima lo
+      // que el cliente había respondido antes (se emparejan por cédula).
+      const hubo=restaurarBorrador();
+
+      if(agregados>0 || hubo){
         renderRentas();                    // repinta con los familiares del grupo
         mostrarMensajeTitular(htmlMsg,"existente");  // re-fija el mensaje (la ref anterior quedó obsoleta)
       }else{
@@ -1428,6 +1597,7 @@ async function buscarCliente(r,panel){
       msg.className="msg-cliente nuevo";
       msg.innerHTML="¡Bienvenido! Completa las preguntas para conocer tu tarifa.";
       msg.style.display="block";
+      if(restaurarBorrador()){ renderRentas(); mostrarMensajeTitular(msg.innerHTML,"nuevo"); }
     }
     refrescar(false);
   }catch(e){
@@ -1448,6 +1618,7 @@ function mostrarMensajeTitular(html,cls){
    PANTALLA "YA COMPLETADO" (Caso A)
    ===================================================================== */
 function mostrarYaCompletado(data){
+  borrarBorrador();   // este grupo ya respondió; no tiene sentido guardar nada
   const res=data.resumen||{};
   const miembros=res.miembros||[];
   document.getElementById("formulario").style.display="none";
@@ -1575,6 +1746,7 @@ function fechaColombia(){
    CONFIRMACIÓN
    ===================================================================== */
 function mostrarConfirmacion(quiereServicio,payload){
+  borrarBorrador();   // ya quedó registrado en el Sheet: el borrador sobra
   document.getElementById("formulario").style.display="none";
   const conf=document.getElementById("confirmacion"); conf.style.display="block";
   const icono=document.getElementById("conf-icono"), titulo=document.getElementById("conf-titulo"), resumen=document.getElementById("conf-resumen");
@@ -1651,13 +1823,18 @@ document.addEventListener("DOMContentLoaded",()=>{
   aplicarAceptacion();
 
   document.getElementById("btn-agregar").addEventListener("click",()=>{ agregarRenta("familiar"); renderRentas(); });
+  document.getElementById("btn-descartar-borrador").addEventListener("click",descartarBorrador);
   document.getElementById("btn-si").addEventListener("click",()=>enviar(true));
   document.getElementById("btn-no").addEventListener("click",()=>enviar(false));
 
-  // Si el link ya trae el correo, buscamos al cliente y su grupo automáticamente
+  // Si el link ya trae el correo, buscamos al cliente y su grupo automáticamente.
+  // El borrador se restaura DENTRO de buscarCliente, cuando ya está armado el
+  // grupo familiar; si no hay correo en el link, se restaura de una.
   if(emailUrl){
     const panel=document.getElementById("rentas-cont").firstElementChild;
     if(panel) buscarCliente(rentas[0],panel);
+  }else if(restaurarBorrador()){
+    renderRentas();
   }
 });
 </script>
