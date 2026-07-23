@@ -124,19 +124,40 @@
     padding:11px 15px;margin:0 0 18px;font-size:13px;line-height:1.5;color:var(--navy);
   }
 
-  /* Elegir modalidad: contrato firmado o solo compromisos */
-  .modo-opciones{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0 18px}
-  @media(max-width:640px){ .modo-opciones{grid-template-columns:1fr} }
-  .modo-op{
-    display:flex;align-items:flex-start;gap:10px;padding:14px 16px;cursor:pointer;
-    border:1.5px solid var(--linea);border-radius:12px;background:#fff;transition:all .18s;
+  /* ===================== DIÁLOGO TÉRMINOS Y CONDICIONES ===================== */
+  .link-tyc{color:var(--navy);text-decoration:underline;text-underline-offset:3px;
+    text-decoration-color:var(--gold);text-decoration-thickness:2px;cursor:pointer;font-weight:700}
+  .link-tyc:hover{color:var(--gold)}
+  .modal-fondo{
+    position:fixed;inset:0;z-index:100;background:rgba(6,25,47,.62);
+    display:flex;align-items:center;justify-content:center;padding:20px;
   }
-  .modo-op:hover{border-color:var(--gold)}
-  .modo-op input{margin-top:3px;accent-color:var(--navy);flex-shrink:0}
-  .modo-op.sel{border-color:var(--navy);background:rgba(8,38,78,.04);box-shadow:0 0 0 1px var(--navy) inset}
-  .modo-txt{display:flex;flex-direction:column;gap:3px}
-  .modo-txt strong{font-size:14px;color:var(--navy);font-weight:700}
-  .modo-txt em{font-size:12px;color:var(--gris);font-style:normal;line-height:1.45}
+  .modal-fondo[hidden]{display:none}
+  .modal-caja{
+    background:#fff;border-radius:16px;width:100%;max-width:760px;max-height:88vh;
+    display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 60px rgba(6,25,47,.4);
+  }
+  .modal-barra{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0;
+    padding:16px 20px;background:linear-gradient(135deg,var(--navy-dark,#06192F),var(--navy));
+    color:#fff;font-family:var(--serif);font-size:16px;border-bottom:3px solid var(--gold);
+  }
+  .modal-x{background:transparent;border:none;color:#fff;font-size:20px;line-height:1;
+    cursor:pointer;padding:4px 8px;border-radius:8px;opacity:.8}
+  .modal-x:hover{opacity:1;background:rgba(255,255,255,.12)}
+  .modal-cuerpo{overflow-y:auto;padding:0;min-height:0}
+  .modal-pie{flex-shrink:0;padding:14px 20px;border-top:1px solid var(--linea);
+    background:#FBFCFE;display:flex;justify-content:flex-end}
+  .btn-tyc{background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--navy);
+    border:none;border-radius:10px;padding:12px 22px;font-size:14px;font-weight:700;cursor:pointer}
+  .btn-tyc:active{transform:scale(.98)}
+  @media(max-width:640px){ .modal-fondo{padding:0} .modal-caja{max-height:100vh;border-radius:0;max-width:none} }
+
+  /* Puntos esenciales: aparecen solo cuando marca la casilla */
+  .puntos-aceptados{margin-top:14px;animation:aparecer .25s ease}
+  .puntos-aceptados[hidden]{display:none}
+  .pa-titulo{margin:0 0 4px 34px;font-size:13px;font-weight:700;color:var(--navy)}
+  @keyframes aparecer{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 
   /* Pie de cada renta: cuántas faltan + botón Continuar / Finalizar */
   .renta-pie{
@@ -292,6 +313,8 @@
     max-height:440px;overflow-y:auto;border:1px solid var(--linea);border-radius:12px;
     padding:26px 24px;background:#fff;box-shadow:inset 0 0 0 1px #fff, 0 2px 14px rgba(8,38,78,.06);
   }
+  /* Dentro del diálogo quien hace scroll es .modal-cuerpo, no el documento */
+  .modal-cuerpo .doc-contrato{max-height:none;border:none;border-radius:0;box-shadow:none;padding:24px 26px}
   .doc-contrato::-webkit-scrollbar{width:10px}
   .doc-contrato::-webkit-scrollbar-thumb{background:var(--gold);border-radius:10px;border:2px solid #fff}
   .doc-titulo{font-family:var(--serif);text-align:center;color:var(--navy);font-size:17px;font-weight:700;line-height:1.35}
@@ -438,46 +461,30 @@
         </div>
       </aside>
 
-      <!-- ===== FILA 2 · CONTRATO Y FIRMA ===== -->
+      <!-- ===== FILA 2 · ACEPTACIÓN ===== -->
       <div class="col-contrato">
-        <div class="seccion">
+        <div class="seccion" id="seccion-aceptacion">
           <div class="seccion-eyebrow"><span class="rombo">◆</span> Sección 02 · Aceptación</div>
-          <div class="seccion-titulo">¿Cómo prefieres formalizar el servicio?</div>
-
-          <p class="ayuda">Puedes firmar el contrato completo o, si prefieres no firmar un contrato,
-             aceptar únicamente los compromisos esenciales. <strong>En ambos casos prestamos el mismo servicio.</strong></p>
-
-          <div class="modo-opciones">
-            <label class="modo-op" id="modo-op-contrato">
-              <input type="radio" name="modo" value="contrato" checked>
-              <span class="modo-txt">
-                <strong>📄 Firmar el contrato</strong>
-                <em>Documento completo con firma electrónica. Recibes el PDF por correo.</em>
-              </span>
-            </label>
-            <label class="modo-op" id="modo-op-compromiso">
-              <input type="radio" name="modo" value="compromiso">
-              <span class="modo-txt">
-                <strong>🤝 Solo los compromisos esenciales</strong>
-                <em>Sin contrato firmado. Aceptas expresamente los puntos de abajo.</em>
-              </span>
-            </label>
-          </div>
-
-          <div class="doc-contrato" id="contrato"></div>
+          <div class="seccion-titulo">Aceptación del servicio</div>
 
           <div class="aceptacion">
             <label>
               <input type="checkbox" id="chk-acepto">
-              <span id="txt-acepto">He leído y <strong>ACEPTO</strong> los términos y condiciones del contrato de servicios tributarios.</span>
+              <span>He leído y <strong>ACEPTO</strong> los
+                <a href="#" id="link-tyc" class="link-tyc">Términos y Condiciones del servicio</a>.</span>
             </label>
-            <ul>
-              <li>✓ Entregaré los documentos <strong>UNA SEMANA ANTES</strong> de la fecha acordada</li>
-              <li>✓ La información que proporcionaré es veraz y completa</li>
-              <li>✓ Autorizo la preparación y presentación de las rentas ante la DIAN</li>
-              <li>✓ Acepto el valor total cotizado de <strong id="conf-precio">$260.000</strong></li>
-              <li>✓ Conozco la multa de <strong>$70.000</strong> por entrega tardía de documentos</li>
-            </ul>
+
+            <!-- Solo aparece cuando marca la casilla: resumen de lo que aceptó -->
+            <div class="puntos-aceptados" id="puntos-aceptados" hidden>
+              <p class="pa-titulo">Al aceptar confirmas que:</p>
+              <ul>
+                <li>✓ Entregaré los documentos <strong>UNA SEMANA ANTES</strong> de la fecha acordada</li>
+                <li>✓ La información que proporcionaré es veraz y completa</li>
+                <li>✓ Autorizo la preparación y presentación de las rentas ante la DIAN</li>
+                <li>✓ Acepto el valor total cotizado de <strong id="conf-precio">$260.000</strong></li>
+                <li>✓ Conozco la multa de <strong>$70.000</strong> por entrega tardía de documentos</li>
+              </ul>
+            </div>
           </div>
         </div>
 
@@ -491,6 +498,20 @@
 
     </div><!-- /app -->
   </div><!-- /formulario -->
+
+  <!-- ===== DIÁLOGO: TÉRMINOS Y CONDICIONES ===== -->
+  <div class="modal-fondo" id="modal-tyc" role="dialog" aria-modal="true" aria-labelledby="tyc-encabezado" hidden>
+    <div class="modal-caja">
+      <div class="modal-barra">
+        <span id="tyc-encabezado">Términos y Condiciones del servicio</span>
+        <button type="button" id="tyc-cerrar" class="modal-x" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="modal-cuerpo"><div class="doc-contrato" id="contrato"></div></div>
+      <div class="modal-pie">
+        <button type="button" id="tyc-aceptar" class="btn-tyc">He leído y acepto</button>
+      </div>
+    </div>
+  </div>
 
   <div id="confirmacion">
     <div class="check-grande" id="conf-icono">✓</div>
@@ -803,7 +824,7 @@ function renderRentas(){
 /* =====================================================================
    BOTÓN DE PASO DE CADA RENTA — "Continuar" o "Finalizar"
    Si hay otra renta después (grupo familiar) → Continuar, y salta a ella.
-   Si es la última (o es la única) → Finalizar, y baja al contrato.
+   Si es la última (o es la única) → Finalizar, y baja a la aceptación.
    Se habilita solo cuando esa renta está completa.
    ===================================================================== */
 function preguntasFaltantes(r){
@@ -828,7 +849,7 @@ function actualizarBotonesPaso(){
     if(avi){
       if(lista){
         avi.innerHTML = esUltima
-          ? "Todo listo. Continúa con el contrato."
+          ? "Todo listo. Continúa con la aceptación."
           : "Listo. Sigue con la siguiente renta.";
       }else{
         avi.innerHTML = `Falta${faltan>1?"n":""} <strong>${faltan}</strong> pregunta${faltan>1?"s":""} por responder.`;
@@ -837,7 +858,7 @@ function actualizarBotonesPaso(){
   });
 }
 
-/* Ir a la siguiente renta (o al contrato si es la última) */
+/* Ir a la siguiente renta (o a la aceptación si es la última) */
 function avanzarDesde(r){
   const i=rentas.findIndex(x=>x._id===r._id);
   if(i<0) return;
@@ -857,8 +878,8 @@ function avanzarDesde(r){
       panelSig.scrollIntoView({behavior:"smooth",block:"start"});
     }
   }else{
-    // Última renta → bajar al contrato
-    document.getElementById("contrato").scrollIntoView({behavior:"smooth",block:"start"});
+    // Última renta → bajar a la sección de aceptación
+    document.getElementById("seccion-aceptacion").scrollIntoView({behavior:"smooth",block:"start"});
   }
 }
 
@@ -904,38 +925,30 @@ function refrescar(pulse){
   actualizarContrato(ag);
 }
 /* =====================================================================
-   MODALIDAD DE ACEPTACIÓN
-   "contrato"   → contrato completo con firma electrónica (por defecto)
-   "compromiso" → sin contrato firmado; solo acepta los puntos esenciales
-   A nadie se le puede obligar a firmar, pero el compromiso sí queda
-   registrado con fecha, correo e IP.
+   TÉRMINOS Y CONDICIONES
+   El texto completo vive en un diálogo que se abre desde el enlace de la
+   casilla. Marcar la casilla ES la aceptación (firma electrónica, Ley 527
+   de 1999), y al marcarla se despliegan los puntos esenciales aceptados.
    ===================================================================== */
-function modoAceptacion(){
-  const sel=document.querySelector('input[name="modo"]:checked');
-  return sel ? sel.value : "contrato";
+function abrirTyc(){
+  actualizarContrato();                     // siempre con el precio y nombres actuales
+  const m=document.getElementById("modal-tyc");
+  m.hidden=false;
+  document.body.style.overflow="hidden";    // que no haga scroll el fondo
+  m.querySelector(".modal-cuerpo").scrollTop=0;
+  document.getElementById("tyc-cerrar").focus();
 }
 
-function aplicarModo(){
-  const modo=modoAceptacion();
-  const firma=(modo==="contrato");
+function cerrarTyc(){
+  document.getElementById("modal-tyc").hidden=true;
+  document.body.style.overflow="";
+}
 
-  // Resaltar la tarjeta elegida
-  document.querySelectorAll(".modo-op").forEach(op=>{
-    op.classList.toggle("sel", op.querySelector("input").checked);
-  });
-
-  // El contrato solo se muestra si va a firmarlo
-  const doc=document.getElementById("contrato");
-  if(doc) doc.style.display = firma ? "" : "none";
-
-  // Y el texto de la casilla cambia según el caso
-  const txt=document.getElementById("txt-acepto");
-  if(txt){
-    txt.innerHTML = firma
-      ? 'He leído y <strong>ACEPTO</strong> los términos y condiciones del contrato de servicios tributarios.'
-      : 'No deseo firmar un contrato, pero <strong>ME COMPROMETO EXPRESAMENTE</strong> a los siguientes puntos:';
-  }
-  refrescar(false);
+/* Mostrar u ocultar el resumen de puntos esenciales según la casilla */
+function aplicarAceptacion(){
+  const chk=document.getElementById("chk-acepto");
+  const pts=document.getElementById("puntos-aceptados");
+  if(pts) pts.hidden = !chk.checked;
 }
 
 function actualizarContrato(ag){
@@ -960,7 +973,7 @@ function actualizarContrato(ag){
     : "la declaración de renta del CLIENTE";
 
   document.getElementById("contrato").innerHTML=`
-    <div class="doc-titulo">CONTRATO DE SERVICIOS TRIBUTARIOS</div>
+    <div class="doc-titulo">TÉRMINOS Y CONDICIONES DEL SERVICIO TRIBUTARIO</div>
     <div class="doc-sub">Preparación y Presentación de Declaración de Renta 2026 · Año Gravable 2025</div>
     <div class="doc-regla"></div>
 
@@ -1022,7 +1035,7 @@ function actualizarContrato(ag){
       </ul></div>
 
     <div class="doc-clausula"><h4><span class="num">8</span>Validez legal</h4>
-      <p>Contrato válido conforme a la Ley 527 de 1999 (Comercio Electrónico) y el Decreto 2364 de 2012 (Firma Electrónica). La aceptación mediante clic en “ACEPTO LOS TÉRMINOS Y CONDICIONES” constituye <strong>firma electrónica válida y vinculante</strong> para ambas partes, con plenos efectos jurídicos.</p></div>
+      <p>Estos términos y condiciones son válidos conforme a la Ley 527 de 1999 (Comercio Electrónico) y el Decreto 2364 de 2012 (Firma Electrónica). La aceptación marcando la casilla “He leído y ACEPTO los Términos y Condiciones del servicio” constituye <strong>firma electrónica válida y vinculante</strong> para ambas partes, con plenos efectos jurídicos. Se registran automáticamente la fecha, la hora y la dirección IP de la aceptación.</p></div>
 
     <div class="doc-firma">
       Profesional: ${esc(prof.nombre)} (C.C. ${prof.cedula}) — rentas.chsas@gmail.com<br>
@@ -1203,11 +1216,8 @@ async function enviar(quiereServicio){
     banner.style.display="block"; window.scrollTo({top:0,behavior:"smooth"}); return;
   }
   const acepto=document.getElementById("chk-acepto").checked;
-  const modo=modoAceptacion();
   if(quiereServicio && !acepto){
-    banner.textContent = (modo==="contrato")
-      ? "⚠️ Debes marcar la casilla de aceptación del contrato para continuar."
-      : "⚠️ Debes marcar la casilla de compromiso para continuar.";
+    banner.textContent="⚠️ Debes marcar la casilla de aceptación de los Términos y Condiciones para continuar.";
     banner.style.display="block";
     document.getElementById("chk-acepto").scrollIntoView({behavior:"smooth",block:"center"}); return;
   }
@@ -1229,8 +1239,8 @@ async function enviar(quiereServicio){
       precio_bruto:it.bruto, precio_neto:it.neto, respuestas:it.r.resp
     })),
     acepto:acepto, quiere_servicio:quiereServicio, fecha_hora:fechaColombia(),
-    // Modalidad elegida: "contrato" (firma) o "compromiso" (sin firmar)
-    modo_aceptacion:modo, firma_contrato:(modo==="contrato"),
+    // Aceptar los Términos y Condiciones es la firma electrónica (Ley 527/1999)
+    modo_aceptacion:"contrato", firma_contrato:true,
   };
   const btnSi=document.getElementById("btn-si"), btnNo=document.getElementById("btn-no");
   btnSi.disabled=true; btnNo.disabled=true;
@@ -1276,7 +1286,7 @@ function mostrarConfirmacion(quiereServicio,payload){
       ${descTxt}
       <p>• Total a pagar: <strong>${formatoCOP(payload.precioNuevo)}</strong></p>
       <p>• Estado: <strong style="color:var(--exito)">Aceptado</strong></p>
-      <p>📧 Recibirás una confirmación en <strong>${esc(payload.email)}</strong> con una copia del contrato firmado.</p>
+      <p>📧 Recibirás una confirmación en <strong>${esc(payload.email)}</strong> con una copia de los Términos y Condiciones aceptados.</p>
       <p>📅 Recuerda entregar los documentos <strong>UNA SEMANA ANTES</strong> de la fecha de análisis.</p>`;
     sellarAceptado();
   }else{
@@ -1313,10 +1323,26 @@ function emailDeLaUrl(){
 document.addEventListener("DOMContentLoaded",()=>{
   const emailUrl=emailDeLaUrl();
   agregarRenta("titular",emailUrl?{email:emailUrl,origen:"sheet"}:null); // Renta 01 = titular
-  renderRentas();                 // pinta paneles + liquidación + contrato
-  cargarProfesionalActivo();      // a nombre de quién se emite el contrato
-  document.querySelectorAll('input[name="modo"]').forEach(rb=>rb.addEventListener("change",aplicarModo));
-  aplicarModo();
+  renderRentas();                 // pinta paneles + liquidación + T&C
+  cargarProfesionalActivo();      // a nombre de quién se presta el servicio
+
+  // Términos y condiciones: enlace → diálogo
+  document.getElementById("link-tyc").addEventListener("click",ev=>{ ev.preventDefault(); abrirTyc(); });
+  document.getElementById("tyc-cerrar").addEventListener("click",cerrarTyc);
+  document.getElementById("tyc-aceptar").addEventListener("click",()=>{
+    // Botón del diálogo: marca la casilla y cierra
+    const chk=document.getElementById("chk-acepto");
+    chk.checked=true; aplicarAceptacion(); cerrarTyc();
+  });
+  // Clic por fuera de la caja, o Escape, también cierran
+  document.getElementById("modal-tyc").addEventListener("click",ev=>{ if(ev.target.id==="modal-tyc") cerrarTyc(); });
+  document.addEventListener("keydown",ev=>{
+    if(ev.key==="Escape" && !document.getElementById("modal-tyc").hidden) cerrarTyc();
+  });
+
+  document.getElementById("chk-acepto").addEventListener("change",aplicarAceptacion);
+  aplicarAceptacion();
+
   document.getElementById("btn-agregar").addEventListener("click",()=>{ agregarRenta("familiar"); renderRentas(); });
   document.getElementById("btn-si").addEventListener("click",()=>enviar(true));
   document.getElementById("btn-no").addEventListener("click",()=>enviar(false));
