@@ -831,6 +831,12 @@ function nombreLimpio(s){ return String(s||"").replace(/\s+/g," ").trim(); }
 const CACHE_PREFIJO="renta2026:", CACHE_ANONIMO=CACHE_PREFIJO+"anonimo",
       CACHE_ULTIMO=CACHE_PREFIJO+"__ultimo", CACHE_DIAS=45;
 let borradorRestaurado=false, claveActual=null;
+/* NO se guarda nada hasta haber intentado restaurar.
+   Al abrir, refrescar() dispara un guardado a los 400 ms; si la consulta al
+   Sheet demora más que eso (en la vida real, ~1 s), ese guardado VACÍO pisaba
+   el borrador bueno justo antes de leerlo: salía el aviso "recuperamos tus
+   respuestas" y ninguna pregunta marcada. */
+let cacheHabilitado=false;
 
 /* Una llave por correo: en un equipo compartido (o cuando tú misma pruebas
    con varios clientes) los borradores no se mezclan. */
@@ -854,6 +860,7 @@ function clavesPosibles(){
 }
 
 function guardarBorrador(){
+  if(!cacheHabilitado) return;   // todavía no se ha leído lo que ya había
   try{
     const clave=claveCache();
     localStorage.setItem(clave,JSON.stringify({
@@ -931,19 +938,26 @@ function restaurarBorrador(){
     if(!r && g.tipo!=="titular"){
       r=agregarRenta("familiar",{nombre:g.nombre,cedula:g.cedula,parentesco:g.parentesco,
                                  origen:g.origen,precio2026:g.precio2026});
+      if(r) algo=true;   // recrear a una persona ya es haber recuperado algo
     }
     if(!r) return;
     usados.add(r._id);
 
-    claves.forEach(k=>{ if(g.resp && g.resp[k]!==undefined && g.resp[k]!==null && (r.resp[k]===null||r.resp[k]===undefined)) r.resp[k]=g.resp[k]; });
+    // OJO: `algo` solo se marca si de verdad se recuperó algo. Antes se ponía
+    // en true por el simple hecho de emparejar, así que un borrador vacío
+    // mostraba el aviso "recuperamos tus respuestas" sin recuperar nada.
+    claves.forEach(k=>{
+      if(g.resp && g.resp[k]!==undefined && g.resp[k]!==null && (r.resp[k]===null||r.resp[k]===undefined)){
+        r.resp[k]=g.resp[k]; algo=true;
+      }
+    });
     // "Familiar" es el marcador genérico con que llegan del Sheet, no una
     // elección del cliente: si él ya había puesto "Cónyuge" o "Hija", manda eso.
     const genericoActual = !r.parentesco || r.parentesco==="Familiar";
-    if(genericoActual && g.parentesco && g.parentesco!=="Familiar") r.parentesco=g.parentesco;
-    if(!r.nombre && g.nombre)         r.nombre=g.nombre;
-    if(!r.cedula && g.cedula)         r.cedula=g.cedula;
-    if(r.tipo==="titular" && !r.email && g.email) r.email=g.email;
-    algo=true;
+    if(genericoActual && g.parentesco && g.parentesco!=="Familiar"){ r.parentesco=g.parentesco; algo=true; }
+    if(!r.nombre && g.nombre){ r.nombre=g.nombre; algo=true; }
+    if(!r.cedula && g.cedula){ r.cedula=g.cedula; algo=true; }
+    if(r.tipo==="titular" && !r.email && g.email){ r.email=g.email; algo=true; }
   });
 
   if(algo && !borradorRestaurado){
@@ -952,6 +966,17 @@ function restaurarBorrador(){
     if(aviso) aviso.hidden=false;
   }
   return algo;
+}
+
+/* Intenta restaurar y, pase lo que pase, habilita el guardado a partir de ahí.
+   Se llama en TODOS los caminos de arranque (con grupo, sin grupo, cliente
+   nuevo y también si la consulta al Sheet falla), para que nunca se guarde
+   antes de haber leído. */
+function iniciarBorrador(){
+  let hubo=false;
+  try{ hubo=restaurarBorrador(); }catch(x){}
+  cacheHabilitado=true;
+  return hubo;
 }
 
 /* "Empezar de cero": borra el borrador y recarga limpio. */
@@ -1582,7 +1607,7 @@ async function buscarCliente(r,panel){
 
       // El grupo del Sheet ya está armado: ahora sí se puede volcar encima lo
       // que el cliente había respondido antes (se emparejan por cédula).
-      const hubo=restaurarBorrador();
+      const hubo=iniciarBorrador();
 
       if(agregados>0 || hubo){
         renderRentas();                    // repinta con los familiares del grupo
@@ -1597,12 +1622,14 @@ async function buscarCliente(r,panel){
       msg.className="msg-cliente nuevo";
       msg.innerHTML="¡Bienvenido! Completa las preguntas para conocer tu tarifa.";
       msg.style.display="block";
-      if(restaurarBorrador()){ renderRentas(); mostrarMensajeTitular(msg.innerHTML,"nuevo"); }
+      if(iniciarBorrador()){ renderRentas(); mostrarMensajeTitular(msg.innerHTML,"nuevo"); }
     }
     refrescar(false);
   }catch(e){
     loading.style.display="none";
     console.error("Error buscando cliente:",e);
+    // Sin red no se pudo consultar el Sheet, pero el borrador local sí sirve
+    if(iniciarBorrador()){ renderRentas(); }
   }
 }
 
@@ -1656,12 +1683,26 @@ function mostrarYaCompletado(data){
 function validarEmail(email){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }
 /* Devuelve el primer campo faltante como mensaje, o "" si todo está completo */
 function primerFaltante(){
+  // 1) Datos de identificación de cada persona
   for(const r of rentas){
     const et = r.tipo==="titular" ? "tu declaración" : `la renta de ${r.parentesco||"tu familiar"}`;
     if(r.tipo==="titular" && !validarEmail((r.email||"").trim())) return "Ingresa un correo electrónico válido en tu declaración (titular).";
     if(r.tipo!=="titular" && r.origen!=="sheet" && !r.parentesco) return "Selecciona el parentesco de tu familiar.";
     if(!(r.nombre||"").trim()) return `Falta el nombre completo en ${et}.`;
     if(!(r.cedula||"").trim()) return `Falta la cédula en ${et}.`;
+  }
+  // 2) Preguntas de CADA persona incluida en la cotización.
+  //    Antes solo se validaban los datos, así que un grupo familiar podía
+  //    enviarse habiendo respondido un solo formulario: los demás quedaban con
+  //    su precio base y sin la información para pedirles los documentos.
+  for(const r of rentas){
+    const faltan=preguntasFaltantes(r);
+    if(faltan>0){
+      const quien = r.tipo==="titular"
+        ? "tu declaración"
+        : `la renta de ${nombreLimpio(r.nombre) || r.parentesco || "tu familiar"}`;
+      return `Falta${faltan>1?"n":""} ${faltan} pregunta${faltan>1?"s":""} por responder en ${quien}.`;
+    }
   }
   return "";
 }
@@ -1675,7 +1716,18 @@ async function enviar(quiereServicio){
   const falta=primerFaltante();
   if(falta){
     banner.textContent="⚠️ "+falta;
-    banner.style.display="block"; window.scrollTo({top:0,behavior:"smooth"}); return;
+    banner.style.display="block";
+    // Llevar al cliente hasta la persona incompleta: en un grupo familiar los
+    // formularios van plegados y el aviso solo no dice dónde está el hueco.
+    const inc=rentas.find(r=>preguntasFaltantes(r)>0);
+    if(inc){
+      inc.colapsada=false;
+      renderRentas();
+      const btn=document.getElementById("paso-"+inc._id);
+      const panel=btn && btn.closest(".renta");
+      if(panel){ panel.scrollIntoView({behavior:"smooth",block:"start"}); return; }
+    }
+    window.scrollTo({top:0,behavior:"smooth"}); return;
   }
   const acepto      = document.getElementById("chk-acepto").checked;
   const autorizaDatos = document.getElementById("chk-datos").checked;
@@ -1762,7 +1814,7 @@ function mostrarConfirmacion(quiereServicio,payload){
       ${descTxt}
       <p>• Total a pagar: <strong>${formatoCOP(payload.precioNuevo)}</strong></p>
       <p>• Estado: <strong style="color:var(--exito)">Aceptado</strong></p>
-      <p>📧 Recibirás una confirmación en <strong>${esc(payload.email)}</strong> con una copia de los Términos y Condiciones aceptados.</p>
+      <p>📧 Recibirás una confirmación en <strong>${esc(payload.email)}</strong> con el resumen y los documentos que debes reunir.</p>
       <p>📅 Recuerda entregar los documentos <strong>UNA SEMANA ANTES</strong> de la fecha de análisis.</p>`;
     sellarAceptado();
   }else{
@@ -1833,7 +1885,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   if(emailUrl){
     const panel=document.getElementById("rentas-cont").firstElementChild;
     if(panel) buscarCliente(rentas[0],panel);
-  }else if(restaurarBorrador()){
+  }else if(iniciarBorrador()){
     renderRentas();
   }
 });
