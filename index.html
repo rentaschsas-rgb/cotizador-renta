@@ -300,6 +300,12 @@
      y que el valor nunca se parta ni se encoja. */
   .precio-sticky .linea span:first-child{min-width:0;overflow-wrap:anywhere;line-height:1.35}
   .precio-sticky .linea span:last-child{font-family:var(--mono);font-size:12.5px;color:#DCE4EF;white-space:nowrap;flex-shrink:0}
+  /* "Calculando…" — se distingue de una cifra real: sin monoespaciado, atenuado
+     y con un latido suave, para que nadie lo lea como si fuera su tarifa. */
+  .calculando{font-family:inherit!important;font-style:italic;opacity:.6;animation:latido 1.5s ease-in-out infinite}
+  .precio-sticky .total .val.calculando{font-size:20px}
+  @keyframes latido{0%,100%{opacity:.45}50%{opacity:.85}}
+  @media(prefers-reduced-motion:reduce){ .calculando{animation:none} }
   .precio-sticky .divisor{border-top:1px solid var(--gold);opacity:.65;margin:12px 0 10px}
   .precio-sticky .total{display:flex;justify-content:space-between;align-items:baseline;gap:16px}
   .precio-sticky .total .lbl{font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold-light)}
@@ -461,7 +467,7 @@
           <div class="encabezado"><span class="rombo">◆</span> Liquidación · Tarifa 2026</div>
           <div class="lineas" id="precio-lineas"></div>
           <div class="divisor"></div>
-          <div class="total"><span class="lbl">Total a pagar</span><span class="val" id="precio-total">$260.000</span></div>
+          <div class="total"><span class="lbl">Total a pagar</span><span class="val calculando" id="precio-total">Calculando…</span></div>
         </div>
       </aside>
 
@@ -503,7 +509,7 @@
                 <li>✓ Entregaré los documentos <strong>UNA SEMANA ANTES</strong> de la fecha acordada</li>
                 <li>✓ La información que proporcionaré es veraz y completa</li>
                 <li>✓ Autorizo la preparación y presentación de las rentas ante la DIAN</li>
-                <li>✓ Acepto el valor total cotizado de <strong id="conf-precio">$260.000</strong></li>
+                <li>✓ Acepto el valor total cotizado de <strong id="conf-precio">Calculando…</strong></li>
                 <li>✓ Conozco la multa de <strong>$70.000</strong> por entrega tardía de documentos</li>
               </ul>
             </div>
@@ -827,6 +833,20 @@ function brutoDeRenta(r){
   return (r.precio2026>0) ? Math.round(r.precio2026) : calcularPrecioRenta(r).total;
 }
 
+/* ¿Ya se puede saber cuánto vale esta renta?
+   Antes se mostraba PRECIO_BASE desde el primer segundo, y el cliente leía
+   "$260.000" como si fuera su tarifa; cuando el número subía al responder,
+   parecía que le estaban cambiando el precio. Ahora, mientras no haya de
+   dónde sacarlo, se muestra "Calculando…" en vez de una cifra que no es suya.
+     · Viene del Sheet con tu PRECIO 2026 → se sabe de una.
+     · Es alguien nuevo → el precio se arma con las respuestas, así que se
+       espera a que responda al menos una pregunta. */
+function precioListo(r){
+  if(r.precio2026>0) return true;
+  const q=r.resp;
+  return Object.keys(nuevaResp()).some(k=>q[k]!==null && q[k]!==undefined);
+}
+
 /* Cálculo agregado del grupo familiar (con descuento del 15% a todas si hay >1) */
 function calcularAgregado(){
   const aplica=rentas.length>=2;
@@ -835,11 +855,14 @@ function calcularAgregado(){
     // 15% de descuento sobre el precio 2026. Sin piso: si tu precio ya es bajo,
     // el descuento se aplica igual y respeta lo que definiste en el Sheet.
     const neto=aplica?Math.round(bruto*(1-DESCUENTO)):bruto;
-    return {r,bruto,neto};
+    return {r,bruto,neto,listo:precioListo(r)};
   });
   const totalBruto=items.reduce((s,it)=>s+it.bruto,0);
   const totalNeto=items.reduce((s,it)=>s+it.neto,0);
-  return {items,aplica,totalBruto,totalNeto,descuento:totalBruto-totalNeto};
+  // El total solo se muestra cuando TODAS las rentas tienen precio: sumar una
+  // que todavía está en su base daría un total que después cambia solo.
+  const todoListo=items.every(it=>it.listo);
+  return {items,aplica,totalBruto,totalNeto,descuento:totalBruto-totalNeto,todoListo};
 }
 function etiquetaRenta(r){ return r.tipo==="titular"?"Titular":(r.parentesco||"Familiar"); }
 
@@ -1062,19 +1085,28 @@ function refrescar(pulse){
     // Nombre COMPLETO: en un grupo familiar todos comparten apellido, así que
     // mostrar solo una palabra dejaba líneas idénticas y no se sabía cuál era cuál.
     const nom=it.r.nombre?" · "+esc(nombreLimpio(it.r.nombre)):"";
-    html+=`<div class="linea"><span>${esc(etiquetaRenta(it.r))}${nom}</span><span>${formatoCOP(it.bruto)}</span></div>`;
+    const val=it.listo?formatoCOP(it.bruto):`<span class="calculando">Calculando…</span>`;
+    html+=`<div class="linea"><span>${esc(etiquetaRenta(it.r))}${nom}</span><span>${val}</span></div>`;
   });
-  if(ag.aplica) html+=`<div class="linea descuento"><span>Descuento familiar (−15%)</span><span>−${formatoCOP(ag.descuento)}</span></div>`;
+  // El descuento solo tiene sentido cuando ya están todos los precios
+  if(ag.aplica && ag.todoListo) html+=`<div class="linea descuento"><span>Descuento familiar (−15%)</span><span>−${formatoCOP(ag.descuento)}</span></div>`;
   document.getElementById("precio-lineas").innerHTML=html;
-  document.getElementById("precio-total").textContent=formatoCOP(ag.totalNeto);
-  document.getElementById("conf-precio").textContent=formatoCOP(ag.totalNeto);
+
+  const totalTxt=ag.todoListo?formatoCOP(ag.totalNeto):"Calculando…";
+  const elTotal=document.getElementById("precio-total");
+  elTotal.textContent=totalTxt;
+  elTotal.classList.toggle("calculando", !ag.todoListo);
+  document.getElementById("conf-precio").textContent=totalTxt;
+
   // Subtotal + estado de completitud por renta
   ag.items.forEach(it=>{
     const el=document.getElementById("sub-"+it.r._id);
     if(el){
-      el.innerHTML = ag.aplica
-        ? `<span class="bruto">${formatoCOP(it.bruto)}</span><span class="neto">${formatoCOP(it.neto)}</span>`
-        : `<span class="neto">${formatoCOP(it.neto)}</span>`;
+      el.innerHTML = !it.listo
+        ? `<span class="neto calculando">Calculando…</span>`
+        : (ag.aplica
+            ? `<span class="bruto">${formatoCOP(it.bruto)}</span><span class="neto">${formatoCOP(it.neto)}</span>`
+            : `<span class="neto">${formatoCOP(it.neto)}</span>`);
     }
     const badge=document.getElementById("completa-"+it.r._id);
     if(badge){
@@ -1145,9 +1177,11 @@ function actualizarContrato(ag){
   // Filas de la tabla de rentas contratadas
   let filas="";
   ag.items.forEach(it=>{
-    filas+=`<tr><td>${esc(it.r.nombre||"—")}</td><td>${esc(etiquetaRenta(it.r))}</td><td>C.C. ${esc(it.r.cedula||"—")}</td><td class="num">${formatoCOP(it.bruto)}</td></tr>`;
+    // Mientras no se sepa el precio, en el documento tampoco se inventa una cifra
+    const val=it.listo?formatoCOP(it.bruto):"Calculando…";
+    filas+=`<tr><td>${esc(it.r.nombre||"—")}</td><td>${esc(etiquetaRenta(it.r))}</td><td>C.C. ${esc(it.r.cedula||"—")}</td><td class="num">${val}</td></tr>`;
   });
-  const filaDesc = ag.aplica
+  const filaDesc = (ag.aplica && ag.todoListo)
     ? `<tr class="desc"><td colspan="3">Descuento por ${n} rentas del grupo familiar (−15%)</td><td class="num">−${formatoCOP(ag.descuento)}</td></tr>`
     : "";
   const objeto = n>1
@@ -1196,7 +1230,7 @@ function actualizarContrato(ag){
         <tbody>
           ${filas}
           ${filaDesc}
-          <tr class="total"><td colspan="3">Total a pagar</td><td class="num">${formatoCOP(ag.totalNeto)}</td></tr>
+          <tr class="total"><td colspan="3">Total a pagar</td><td class="num">${ag.todoListo?formatoCOP(ag.totalNeto):"Calculando…"}</td></tr>
         </tbody>
       </table>
       ${ag.aplica?`<div class="doc-destacado">Incluye <strong>15% de descuento</strong> por declarar ${n} rentas de un mismo grupo familiar.</div>`:``}</div>
