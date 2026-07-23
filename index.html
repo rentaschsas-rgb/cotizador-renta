@@ -1185,46 +1185,64 @@ function actualizarContrato(ag){
     ? `<tr class="desc"><td colspan="3">Descuento por ${n} rentas del grupo familiar (−15%)</td><td class="num">−${formatoCOP(ag.descuento)}</td></tr>`
     : "";
   const objeto = n>1
-    ? "las declaraciones de renta relacionadas en la cláusula 4"
+    ? "las declaraciones de renta relacionadas en la cláusula 6"
     : "la declaración de renta del CLIENTE";
 
   document.getElementById("contrato").innerHTML=`
-    <div class="doc-titulo">TÉRMINOS Y CONDICIONES DEL SERVICIO TRIBUTARIO</div>
-    <div class="doc-sub">Preparación y Presentación de Declaración de Renta 2026 · Año Gravable 2025</div>
+    <div class="doc-titulo">TÉRMINOS Y CONDICIONES DEL SERVICIO DE PREPARACIÓN Y PRESENTACIÓN DE DECLARACIONES DE RENTA</div>
+    <div class="doc-sub">Declaración de Renta 2026 · Año Gravable 2025</div>
     <div class="doc-regla"></div>
 
-    <div class="doc-partes">
-      <div class="doc-parte"><div class="rol">Cliente (titular)</div>
-        ${esc(nombre)}<br>C.C. ${esc(cedula)}<br>${esc(email)}
-        ${n>1?`<br><small style="color:var(--gris)">Contrata ${n} rentas del grupo familiar (cláusula 4)</small>`:""}</div>
-      <div class="doc-parte"><div class="rol">Profesional Tributario</div>
-        ${esc(prof.nombre)}<br>C.C. ${prof.cedula}<br>rentas.chsas@gmail.com<br>
-        <small style="color:var(--gris)">Cano Herrera Asesorías SAS</small></div>
-    </div>
+    <div class="doc-clausula"><h4><span class="num">1</span>Aceptación</h4>
+      <p>Al seleccionar la casilla <strong>“He leído y acepto los Términos y Condiciones del Servicio”</strong>, el cliente manifiesta que ha leído, comprendido y aceptado íntegramente las presentes condiciones, las cuales constituyen un acuerdo legalmente vinculante entre el cliente y el prestador del servicio, de conformidad con la Ley 527 de 1999, el Decreto 2364 de 2012 y las demás normas aplicables sobre comercio electrónico y firma electrónica en Colombia.</p>
+      <div class="doc-destacado">La aceptación electrónica produce los <strong>mismos efectos jurídicos que una firma manuscrita</strong>.</div></div>
 
-    <div class="doc-clausula"><h4><span class="num">1</span>Objeto del servicio</h4>
-      <p>El PROFESIONAL se compromete a preparar y presentar ante la DIAN ${objeto} correspondiente(s) al año gravable 2025, de forma íntegra, oportuna y conforme a la normativa tributaria vigente. El servicio incluye, por cada renta:</p>
+    <div class="doc-clausula"><h4><span class="num">2</span>Partes</h4>
+      <p>Los presentes términos regulan la prestación del servicio entre:</p>
+      <div class="doc-partes">
+        <div class="doc-parte"><div class="rol">El Cliente</div>
+          <p style="margin:0 0 6px">Persona natural que solicita la preparación y presentación de una o más declaraciones de renta.</p>
+          ${esc(nombre)}<br>C.C. ${esc(cedula)}<br>${esc(email)}
+          ${n>1?`<br><small style="color:var(--gris)">Contrata ${n} rentas del grupo familiar (cláusula 6)</small>`:""}</div>
+        <div class="doc-parte"><div class="rol">El Profesional</div>
+          <strong>${esc(prof.nombre)}</strong>, identificada con C.C. No. ${prof.cedula}, actuando en representación de
+          <strong>Cano Herrera Asesorías S.A.S.</strong>, quien presta los servicios tributarios objeto del presente acuerdo.<br>
+          <small style="color:var(--gris)">rentas.chsas@gmail.com</small></div>
+      </div></div>
+
+    <div class="doc-clausula"><h4><span class="num">3</span>Objeto del servicio</h4>
+      <p>El PROFESIONAL prestará el servicio de análisis, preparación y presentación electrónica de ${objeto} correspondiente(s) al año gravable contratado, conforme a la legislación tributaria vigente.</p>
+      <p>El servicio podrá incluir, según corresponda:</p>
       <ul>
-        <li>Análisis completo de ingresos, activos, pasivos y deducciones</li>
-        <li>Preparación del formulario 210 ante la DIAN</li>
-        <li>Presentación electrónica ante la DIAN antes del vencimiento</li>
-        <li>Envío de soportes del ayuda renta por correo electrónico</li>
+        <li>Análisis de ingresos, patrimonio, activos, pasivos, costos, deducciones y demás información tributaria.</li>
+        <li>Elaboración del formulario oficial exigido por la DIAN.</li>
+        <li>Presentación electrónica de la declaración dentro de los plazos legales, siempre que el cliente haya cumplido oportunamente con sus obligaciones.</li>
+        <li>Entrega de la declaración presentada y del respectivo documento de apoyo o ayuda renta.</li>
+        <li>Atención de inquietudes relacionadas exclusivamente con la declaración elaborada.</li>
       </ul></div>
 
-    <div class="doc-clausula"><h4><span class="num">2</span>Compromisos del cliente</h4>
-      <p>a) Entregar documentos <strong>UNA (1) SEMANA ANTES</strong> de la fecha de análisis acordada: certificados de ingresos y retenciones, estados de cuenta bancarios 2025, certificados de inversiones (CDT, fondos, fiducias), comprobantes de pagos y deducciones, documentos de activos y pasivos, y demás soportes solicitados.</p>
-      <p>b) Proporcionar información veraz y completa.</p>
-      <p>c) Comunicar cambios, correcciones o adiciones de inmediato.</p>
-      <p>d) Responder consultas del PROFESIONAL dentro de 48 horas.</p></div>
+    <div class="doc-clausula"><h4><span class="num">4</span>Obligaciones del cliente</h4>
+      <p>El CLIENTE se compromete a:</p>
+      <p>a. Entregar la totalidad de los documentos requeridos con una anticipación mínima de <strong>una (1) semana</strong> respecto de la fecha de análisis o elaboración previamente acordada.</p>
+      <p>b. Suministrar información veraz, completa, actualizada y auténtica.</p>
+      <p>c. Informar inmediatamente cualquier corrección, modificación o información adicional que pueda afectar la declaración tributaria.</p>
+      <p>d. Atender las solicitudes de información realizadas por el PROFESIONAL dentro de un plazo máximo de cuarenta y ocho (48) horas.</p>
+      <p>e. Revisar la información contenida en la declaración antes de su presentación cuando sea requerida su validación.</p>
+      <p>f. Pagar el valor del servicio en las condiciones previamente informadas.</p></div>
 
-    <div class="doc-clausula"><h4><span class="num">3</span>Compromisos del profesional</h4>
-      <p>a) Analizar completamente la información entregada.</p>
-      <p>b) Presentar la(s) declaración(es) ante la DIAN antes del vencimiento del calendario tributario.</p>
-      <p>c) Enviar al CLIENTE los soportes de la declaración y el ayuda renta.</p>
-      <p>d) Mantener absoluta confidencialidad conforme a la Ley 1581 de 2012 (Protección de Datos Personales).</p></div>
+    <div class="doc-clausula"><h4><span class="num">5</span>Obligaciones del profesional</h4>
+      <p>El PROFESIONAL se compromete a:</p>
+      <ul>
+        <li>Analizar diligentemente la documentación suministrada.</li>
+        <li>Elaborar la declaración conforme a la normatividad tributaria vigente.</li>
+        <li>Presentar la declaración electrónicamente dentro del calendario tributario aplicable, siempre que el cliente haya entregado oportunamente toda la información requerida.</li>
+        <li>Remitir al cliente los documentos correspondientes a la declaración presentada.</li>
+        <li>Mantener absoluta reserva y confidencialidad sobre toda la información recibida.</li>
+        <li>Proteger los datos personales conforme a la Política de Privacidad y la legislación colombiana.</li>
+      </ul></div>
 
-    <div class="doc-clausula"><h4><span class="num">4</span>Valor del servicio y rentas contratadas</h4>
-      <p>El CLIENTE contrata la preparación y presentación de la(s) siguiente(s) declaración(es) de renta (AG 2025):</p>
+    <div class="doc-clausula"><h4><span class="num">6</span>Valor del servicio</h4>
+      <p>El valor del servicio será el informado al cliente durante el proceso de contratación.</p>
       <table class="doc-tabla">
         <thead><tr><th>Declarante</th><th>Parentesco</th><th>Documento</th><th class="num">Valor</th></tr></thead>
         <tbody>
@@ -1233,29 +1251,86 @@ function actualizarContrato(ag){
           <tr class="total"><td colspan="3">Total a pagar</td><td class="num">${ag.todoListo?formatoCOP(ag.totalNeto):"Calculando…"}</td></tr>
         </tbody>
       </table>
-      ${ag.aplica?`<div class="doc-destacado">Incluye <strong>15% de descuento</strong> por declarar ${n} rentas de un mismo grupo familiar.</div>`:``}</div>
+      <p>Cuando el cliente contrate varias declaraciones de renta, podrán aplicarse descuentos comerciales que serán reflejados antes de realizar el pago.</p>
+      ${ag.aplica?`<div class="doc-destacado">Incluye <strong>15% de descuento</strong> por declarar ${n} rentas de un mismo grupo familiar.</div>`:``}
+      <p>Al aceptar estos términos, el CLIENTE manifiesta conocer y aceptar el valor total cotizado para el servicio contratado.</p></div>
 
-    <div class="doc-clausula"><h4><span class="num">5</span>Multa por incumplimiento en entrega de documentos</h4>
-      <p>Si el CLIENTE no entrega la totalidad de los documentos dentro del plazo establecido (una semana antes de la fecha de análisis), se aplicará un cobro adicional de <strong>SETENTA MIL PESOS ($70.000 COP)</strong> por gestión extemporánea, dada la complejidad operativa de procesar información fuera de los tiempos acordados y el riesgo de incumplimiento ante la DIAN.</p></div>
-
-    <div class="doc-clausula"><h4><span class="num">6</span>Responsabilidades y limitaciones</h4>
-      <p><strong>El PROFESIONAL</strong> responde por el cálculo correcto según la normativa vigente, la presentación oportuna ante la DIAN y el uso adecuado de los soportes entregados.</p>
-      <p><strong>El CLIENTE</strong> responde por la veracidad de la información suministrada, la entrega oportuna de documentos y las consecuencias derivadas de información incorrecta o incompleta.</p>
-      <p>El incumplimiento del CLIENTE en la entrega de documentos puede afectar la presentación oportuna; en tal caso, el PROFESIONAL no será responsable por sanciones de extemporaneidad.</p></div>
-
-    <div class="doc-clausula"><h4><span class="num">7</span>Multas o sanciones de la DIAN</h4>
-      <p>En caso de que la DIAN imponga una multa o sanción relacionada con la declaración, se <strong>evaluará la causa que la generó</strong> y será asumida por la parte responsable según las obligaciones establecidas en este contrato:</p>
+    <div class="doc-clausula"><h4><span class="num">7</span>Entrega extemporánea de documentos</h4>
+      <p>Cuando el CLIENTE entregue la documentación fuera del plazo mínimo establecido de una (1) semana antes de la fecha acordada para el análisis, el PROFESIONAL podrá:</p>
       <ul>
-        <li>Si la multa se origina en información incorrecta, incompleta o entregada de forma extemporánea por parte del <strong>CLIENTE</strong>, será cargada al CLIENTE.</li>
-        <li>Si la multa se origina en un error de cálculo, de presentación o de gestión imputable al <strong>PROFESIONAL</strong>, será asumida por el PROFESIONAL.</li>
+        <li>Reprogramar la prestación del servicio según disponibilidad.</li>
+        <li>Aplicar un cargo adicional por gestión extemporánea de <strong>SETENTA MIL PESOS ($70.000 COP)</strong> por cada proceso afectado.</li>
+        <li>Informar que no puede garantizar la presentación dentro de los plazos establecidos por la DIAN.</li>
       </ul></div>
 
-    <div class="doc-clausula"><h4><span class="num">8</span>Validez legal</h4>
-      <p>Estos términos y condiciones son válidos conforme a la Ley 527 de 1999 (Comercio Electrónico) y el Decreto 2364 de 2012 (Firma Electrónica). La aceptación marcando la casilla “He leído y ACEPTO los Términos y Condiciones del servicio” constituye <strong>firma electrónica válida y vinculante</strong> para ambas partes, con plenos efectos jurídicos. Se registran automáticamente la fecha, la hora y la dirección IP de la aceptación.</p></div>
+    <div class="doc-clausula"><h4><span class="num">8</span>Responsabilidad del cliente</h4>
+      <p>El CLIENTE reconoce que toda la información suministrada constituye la base para la elaboración de la declaración tributaria.</p>
+      <p>En consecuencia, será responsable por:</p>
+      <ul>
+        <li>La autenticidad de los documentos entregados.</li>
+        <li>La veracidad de la información suministrada.</li>
+        <li>La omisión de ingresos, activos, patrimonio o cualquier otro dato relevante.</li>
+        <li>La entrega tardía de documentos.</li>
+        <li>Las consecuencias tributarias derivadas de información falsa, incompleta, inexacta o extemporánea.</li>
+      </ul></div>
+
+    <div class="doc-clausula"><h4><span class="num">9</span>Responsabilidad del profesional</h4>
+      <p>El PROFESIONAL será responsable exclusivamente de:</p>
+      <ul>
+        <li>Aplicar correctamente la normatividad tributaria vigente.</li>
+        <li>Realizar adecuadamente los cálculos derivados de la información suministrada.</li>
+        <li>Presentar electrónicamente la declaración cuando el cliente haya cumplido oportunamente con todas sus obligaciones.</li>
+      </ul>
+      <p>El PROFESIONAL no será responsable por sanciones, intereses, requerimientos o actuaciones administrativas originadas en información incorrecta, falsa, incompleta o entregada fuera del tiempo establecido por el CLIENTE.</p></div>
+
+    <div class="doc-clausula"><h4><span class="num">10</span>Multas y sanciones tributarias</h4>
+      <p>Cuando la DIAN imponga sanciones relacionadas con la declaración presentada, la responsabilidad se determinará de acuerdo con la causa que las origine.</p>
+      <p>Serán asumidas por el <strong>CLIENTE</strong> cuando se deriven de:</p>
+      <ul>
+        <li>Información falsa.</li>
+        <li>Información incompleta.</li>
+        <li>Documentación alterada.</li>
+        <li>Omisión de información relevante.</li>
+        <li>Entrega extemporánea de documentos.</li>
+        <li>Cualquier incumplimiento atribuible al CLIENTE.</li>
+      </ul>
+      <p>Serán asumidas por el <strong>PROFESIONAL</strong> únicamente cuando se demuestre que obedecen exclusivamente a errores de cálculo, elaboración o presentación imputables al mismo.</p></div>
+
+    <div class="doc-clausula"><h4><span class="num">11</span>Confidencialidad</h4>
+      <p>Toda la información suministrada por el CLIENTE tendrá carácter confidencial y será utilizada únicamente para la prestación del servicio contratado y para el cumplimiento de obligaciones legales.</p>
+      <p>El tratamiento de los datos personales se realizará conforme a la Política de Privacidad y a la autorización otorgada por el titular.</p></div>
+
+    <div class="doc-clausula"><h4><span class="num">12</span>Comunicaciones</h4>
+      <p>El CLIENTE autoriza que todas las comunicaciones relacionadas con el servicio puedan realizarse mediante correo electrónico, llamada telefónica, mensajes de texto, WhatsApp u otros medios electrónicos suministrados durante el proceso de contratación.</p>
+      <p>Toda comunicación enviada a dichos medios se entenderá válidamente notificada.</p></div>
+
+    <div class="doc-clausula"><h4><span class="num">13</span>Fuerza mayor</h4>
+      <p>El PROFESIONAL no será responsable por retrasos ocasionados por eventos de fuerza mayor o caso fortuito, incluyendo fallas de la plataforma de la DIAN, interrupciones de servicios tecnológicos, desastres naturales, actos de autoridad o cualquier circunstancia ajena a su control.</p></div>
+
+    <div class="doc-clausula"><h4><span class="num">14</span>Modificaciones</h4>
+      <p>El PROFESIONAL podrá actualizar estos Términos y Condiciones cuando sea necesario por cambios legales, tributarios, tecnológicos o administrativos.</p>
+      <p>Las nuevas versiones serán publicadas en la plataforma y aplicarán para las contrataciones realizadas con posterioridad a su publicación.</p></div>
+
+    <div class="doc-clausula"><h4><span class="num">15</span>Legislación aplicable</h4>
+      <p>Los presentes Términos y Condiciones se rigen por las leyes de la República de Colombia.</p>
+      <p>Cualquier controversia será resuelta conforme a la legislación colombiana vigente.</p></div>
+
+    <div class="doc-clausula"><h4><span class="num">16</span>Aceptación electrónica</h4>
+      <p>Al seleccionar la casilla <strong>“He leído y acepto los Términos y Condiciones del Servicio”</strong>, el CLIENTE declara que:</p>
+      <ul>
+        <li>Ha leído íntegramente este documento.</li>
+        <li>Comprende el alcance del servicio contratado.</li>
+        <li>Acepta todas las obligaciones aquí establecidas.</li>
+        <li>Autoriza la preparación y, cuando corresponda, la presentación electrónica de su declaración de renta ante la DIAN.</li>
+        <li>Acepta el valor total cotizado del servicio.</li>
+        <li>Reconoce el cargo adicional por gestión extemporánea cuando aplique.</li>
+        <li>Entiende que la declaración será elaborada con base exclusivamente en la información suministrada por él.</li>
+      </ul>
+      <div class="doc-destacado">La plataforma registrará automáticamente la <strong>fecha, la hora, la dirección IP</strong> y demás evidencias electrónicas de la aceptación, las cuales constituirán prueba del consentimiento otorgado.</div></div>
 
     <div class="doc-firma">
       Profesional: ${esc(prof.nombre)} (C.C. ${prof.cedula}) — rentas.chsas@gmail.com<br>
-      Fecha, hora e IP de aceptación: se registran automáticamente al aceptar.
+      Cano Herrera Asesorías S.A.S.
     </div>`;
 }
 
