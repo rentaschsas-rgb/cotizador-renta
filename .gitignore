@@ -5,3 +5,8 @@ INSTRUCCIONES.md
 ARQUITECTURA.md
 plataforma/
 *.bak
+
+# El generador y sus dependencias tampoco
+generar_documentos.js
+node_modules/
+package*.json

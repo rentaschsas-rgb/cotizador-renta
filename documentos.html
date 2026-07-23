@@ -1,0 +1,743 @@
+<title>Documentos legales · Cano Herrera Asesorías SAS</title>
+<style>
+
+  /* ===================== PALETA (colores del logo Cano Herrera) ===================== */
+  :root{
+    --navy:#08264E;        /* azul marino del monograma (tinta) */
+    --navy-deep:#06192F;   /* navy casi negro para el panel de liquidación */
+    --navy-soft:#0E3A6B;   /* navy medio */
+    --gold:#C4923A;        /* dorado de la flecha (acento, con moderación) */
+    --gold-light:#D9A94B;  /* dorado claro */
+    --gold-pale:#F1E6CE;   /* dorado muy suave (fondos) */
+    --gold-soft:#E9D3A0;   /* filete dorado */
+    --gris:#5A6675;        /* gris de las barras */
+    --fondo:#F6F4EF;       /* papel cálido (papelería contable) */
+    --texto:#1B2536;       /* tinta casi negra */
+    --ink-soft:#4A5566;    /* texto secundario */
+    --exito:#2E7D5B;       /* verde sobrio */
+    --error:#C0392B;       /* rojo */
+    --linea:#E7E1D4;       /* hairline sobre papel */
+    --gris-medio:#9AA5B4;
+    --gris-oscuro:#55606E;
+    --serif:Georgia,"Times New Roman",serif;
+    --mono:"SFMono-Regular",ui-monospace,"Cascadia Mono","Consolas",monospace; /* cifras tabulares */
+  }
+  /* Marca de rombo (◆) tomada del lockup del logo */
+  .rombo{color:var(--gold)}
+  /* Accesibilidad: foco visible dorado */
+  :focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-radius:6px}
+  input.txt:focus-visible{outline:none}
+  /* Respeta reduce-motion */
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important}
+  }
+
+  /* ===================== RESET Y BASE ===================== */
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:var(--fondo);color:var(--texto);line-height:1.55;padding-bottom:230px;
+  }
+  .contenedor{max-width:1120px;margin:0 auto;padding:16px}
+
+  /* ===================== LAYOUT DE DOS COLUMNAS (escritorio) ===================== */
+  .app{display:block}
+  .col-side{margin-top:26px}
+  @media (min-width:920px){
+    body{padding-bottom:40px}
+    .app{
+      display:grid;gap:30px;align-items:start;
+      grid-template-columns:minmax(0,1fr) 340px;
+      grid-template-areas:"preguntas side" "contrato side";
+    }
+    .col-preguntas{grid-area:preguntas;min-width:0}
+    .col-side{grid-area:side;margin-top:0;position:sticky;top:16px}
+    .col-contrato{grid-area:contrato;min-width:0}
+    .col-preguntas .seccion:first-child{margin-top:0}
+    /* preguntas en 2 columnas dentro de cada renta */
+    .preguntas-grid{grid-template-columns:1fr 1fr}
+    .preguntas-grid .pregunta.columna{grid-column:1 / -1}
+  }
+  /* En móvil la liquidación queda fija abajo, siempre visible */
+  @media (max-width:919px){
+    .col-side{position:sticky;bottom:14px;z-index:60}
+    .precio-sticky{max-height:46vh;overflow-y:auto}
+  }
+
+  /* ===================== PANEL POR RENTA ===================== */
+  .ayuda{font-size:13.5px;color:var(--ink-soft);margin:0 2px 14px;max-width:640px}
+  .ayuda strong{color:var(--navy)}
+  .renta{
+    background:#fff;border:1px solid var(--linea);border-radius:16px;padding:20px;margin-bottom:16px;
+    box-shadow:0 1px 3px rgba(27,37,54,.05),0 10px 26px rgba(27,37,54,.05);
+    position:relative;
+  }
+  .renta.titular{border-left:4px solid var(--gold)}
+  .renta-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--linea);cursor:pointer;user-select:none}
+  .renta-chevron{
+    flex:0 0 auto;width:26px;height:26px;border:1px solid var(--linea);border-radius:8px;background:#fff;
+    display:flex;align-items:center;justify-content:center;color:var(--navy);font-size:12px;
+    transition:transform .22s ease, border-color .18s;
+  }
+  .renta-head:hover .renta-chevron{border-color:var(--gold)}
+  .renta.colapsada .renta-chevron{transform:rotate(-90deg)}
+  .renta.colapsada .renta-head{margin-bottom:0;padding-bottom:0;border-bottom:none}
+  .renta.colapsada .renta-body{display:none}
+  .renta.colapsada .renta-completa{display:inline-flex}
+  .renta-completa{display:none;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.5px;
+    color:var(--exito);background:#EAF4EF;border-radius:20px;padding:3px 10px}
+  .renta-completa.incompleta{color:#8A6D1E;background:#F5ECD3}
+  .renta-tag{
+    font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);
+    display:flex;align-items:center;gap:7px;
+  }
+  .renta-tag .rombo{font-size:8px}
+  .renta-sub{margin-left:auto;text-align:right;font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1}
+  .renta-sub .bruto{color:var(--gris-medio);text-decoration:line-through;font-size:12px;margin-right:6px}
+  .renta-sub .neto{font-family:var(--serif);font-size:19px;color:var(--navy)}
+  .renta-quitar{
+    background:none;border:1px solid var(--linea);color:var(--gris-oscuro);border-radius:8px;
+    padding:6px 12px;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .18s;
+  }
+  .renta-quitar:hover{border-color:var(--error);color:var(--error)}
+  .sub-eyebrow{font-size:10.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gris);margin:16px 2px 10px}
+  .sub-eyebrow:first-of-type{margin-top:4px}
+  .preguntas-grid{display:grid;grid-template-columns:1fr;gap:12px}
+  .renta-id{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:4px}
+  @media (min-width:560px){ .renta-id{grid-template-columns:1fr 1fr} .renta-id .full{grid-column:1 / -1} }
+
+  /* Botón agregar renta */
+  .btn-agregar{
+    width:100%;padding:15px;border:2px dashed var(--gold);border-radius:14px;background:rgba(196,146,58,.05);
+    color:var(--navy);font-size:14.5px;font-weight:700;cursor:pointer;transition:all .18s;
+  }
+  .btn-agregar:hover{background:rgba(196,146,58,.12)}
+  .btn-agregar:disabled{opacity:.5;cursor:not-allowed}
+
+  /* Aviso de que todo se refiere al año gravable 2025 */
+  .aviso-anio{
+    background:var(--gold-pale);border-left:4px solid var(--gold);border-radius:8px;
+    padding:11px 15px;margin:0 0 18px;font-size:13px;line-height:1.5;color:var(--navy);
+  }
+
+  /* Aviso de que se recuperó un borrador guardado en el equipo del cliente */
+  .aviso-borrador{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    background:#EAF4EE;border-left:4px solid var(--exito,#2E7D5B);border-radius:8px;
+    padding:11px 15px;margin:0 0 18px;font-size:13px;line-height:1.5;color:#1F5C42;
+  }
+  .aviso-borrador[hidden]{display:none}
+  .aviso-borrador button{
+    background:transparent;border:1px solid #9CC4AE;color:#1F5C42;border-radius:8px;
+    padding:6px 12px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;
+  }
+  .aviso-borrador button:hover{background:#DCEAE2}
+
+  /* ===================== DIÁLOGO TÉRMINOS Y CONDICIONES ===================== */
+  .link-tyc{color:var(--navy);text-decoration:underline;text-underline-offset:3px;
+    text-decoration-color:var(--gold);text-decoration-thickness:2px;cursor:pointer;font-weight:700}
+  .link-tyc:hover{color:var(--gold)}
+  .modal-fondo{
+    position:fixed;inset:0;z-index:100;background:rgba(6,25,47,.62);
+    display:flex;align-items:center;justify-content:center;padding:20px;
+  }
+  .modal-fondo[hidden]{display:none}
+  .modal-caja{
+    background:#fff;border-radius:16px;width:100%;max-width:760px;max-height:88vh;
+    display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 60px rgba(6,25,47,.4);
+  }
+  .modal-barra{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0;
+    padding:16px 20px;background:linear-gradient(135deg,var(--navy-dark,#06192F),var(--navy));
+    color:#fff;font-family:var(--serif);font-size:16px;border-bottom:3px solid var(--gold);
+  }
+  .modal-x{background:transparent;border:none;color:#fff;font-size:20px;line-height:1;
+    cursor:pointer;padding:4px 8px;border-radius:8px;opacity:.8}
+  .modal-x:hover{opacity:1;background:rgba(255,255,255,.12)}
+  .modal-cuerpo{overflow-y:auto;padding:0;min-height:0}
+  .modal-pie{flex-shrink:0;padding:14px 20px;border-top:1px solid var(--linea);
+    background:#FBFCFE;display:flex;justify-content:flex-end}
+  .btn-tyc{background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--navy);
+    border:none;border-radius:10px;padding:12px 22px;font-size:14px;font-weight:700;cursor:pointer}
+  .btn-tyc:active{transform:scale(.98)}
+  @media(max-width:640px){ .modal-fondo{padding:0} .modal-caja{max-height:100vh;border-radius:0;max-width:none} }
+
+  /* Puntos esenciales: aparecen solo cuando marca la casilla */
+  .puntos-aceptados{margin-top:14px;animation:aparecer .25s ease}
+  .puntos-aceptados[hidden]{display:none}
+  .pa-titulo{margin:0 0 4px 34px;font-size:13px;font-weight:700;color:var(--navy)}
+  @keyframes aparecer{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+
+  /* Pie de cada renta: cuántas faltan + botón Continuar / Finalizar */
+  .renta-pie{
+    display:flex;align-items:center;justify-content:flex-end;gap:14px;flex-wrap:wrap;
+    margin-top:18px;padding-top:16px;border-top:1px solid var(--linea);
+  }
+  .renta-faltan{font-size:12.5px;color:var(--gris);flex:1;min-width:140px}
+  .renta-faltan strong{color:var(--navy);font-weight:700}
+  .btn-paso{
+    padding:12px 26px;border:none;border-radius:10px;background:var(--navy);color:#fff;
+    font-size:14px;font-weight:700;letter-spacing:.3px;cursor:pointer;transition:all .18s;
+    display:inline-flex;align-items:center;gap:8px;
+  }
+  .btn-paso:hover:not(:disabled){background:var(--navy-soft);transform:translateY(-1px)}
+  .btn-paso:disabled{background:#C8CFD8;color:#8A94A2;cursor:not-allowed}
+  .btn-paso.final{background:var(--gold)}
+  .btn-paso.final:hover:not(:disabled){background:var(--gold-light)}
+
+  /* Select de parentesco */
+  select.txt{
+    width:100%;padding:13px 15px;font-size:15px;border:1.5px solid var(--linea);border-radius:10px;
+    background:#FBFCFE;color:var(--texto);cursor:pointer;
+  }
+  select.txt:focus{outline:none;border-color:var(--navy-soft);box-shadow:0 0 0 3px rgba(14,58,107,.12)}
+
+  /* Línea de descuento en la liquidación */
+  .precio-sticky .linea.descuento span{color:var(--gold-light)!important}
+
+  /* ===================== HEADER ===================== */
+  header.hero{
+    background:var(--navy-deep);color:#fff;text-align:center;padding:38px 20px 30px;position:relative;
+  }
+  header.hero::after{ /* filete dorado inferior estilo membrete */
+    content:"";position:absolute;left:0;right:0;bottom:0;height:3px;
+    background:linear-gradient(90deg,transparent,var(--gold),transparent);
+  }
+  .logo-card{
+    display:inline-block;background:#fff;border-radius:14px;padding:16px 22px;
+    box-shadow:0 12px 34px rgba(0,0,0,.34);margin-bottom:22px;
+  }
+  .logo-card img{display:block;max-width:220px;width:100%;height:auto}
+  .hero-eyebrow{
+    font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--gold-light);
+    font-weight:600;margin-bottom:12px;
+  }
+  header.hero h1{
+    font-family:var(--serif);font-weight:400;font-size:27px;line-height:1.2;
+    letter-spacing:.4px;color:#fff;margin-bottom:16px;
+  }
+  /* Divisor de rombo (◆) — tomado del lockup del logo */
+  .diamante{display:flex;align-items:center;justify-content:center;gap:14px;color:var(--gold);font-size:11px}
+  .diamante::before,.diamante::after{content:"";height:1px;width:52px}
+  .diamante::before{background:linear-gradient(90deg,transparent,var(--gold-soft))}
+  .diamante::after{background:linear-gradient(90deg,var(--gold-soft),transparent)}
+  header.hero .sub{font-size:12.5px;color:#B9C4D4;letter-spacing:.3px;margin-top:16px;max-width:460px;margin-left:auto;margin-right:auto}
+
+  /* ===================== SECCIONES Y CARDS ===================== */
+  .seccion{margin-top:30px}
+  .seccion-eyebrow{
+    font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:var(--gold);
+    font-weight:700;margin:0 2px 6px;display:flex;align-items:center;gap:8px;
+  }
+  .seccion-eyebrow .rombo{font-size:8px}
+  .seccion-titulo{
+    font-family:var(--serif);font-size:21px;font-weight:400;color:var(--navy);
+    margin:0 2px 16px;letter-spacing:.2px;
+  }
+  .card{
+    background:#fff;border-radius:14px;padding:22px;
+    box-shadow:0 1px 3px rgba(27,37,54,.05),0 8px 24px rgba(27,37,54,.05);
+    margin-bottom:14px;border:1px solid var(--linea);
+  }
+
+  /* ===================== CAMPOS DE TEXTO ===================== */
+  label.campo{display:block;font-weight:600;font-size:14px;margin-bottom:6px;color:var(--navy)}
+  input.txt{
+    width:100%;padding:13px 15px;font-size:15px;border:1.5px solid var(--linea);
+    border-radius:10px;background:#FBFCFE;color:var(--texto);transition:border-color .2s,box-shadow .2s;
+  }
+  input.txt:focus{outline:none;border-color:var(--navy-soft);box-shadow:0 0 0 3px rgba(14,58,107,.12)}
+  .campo-grupo{margin-bottom:16px}.campo-grupo:last-child{margin-bottom:0}
+  .msg-cliente{margin-top:12px;padding:12px 14px;border-radius:10px;font-size:14px;display:none}
+  .msg-cliente.existente{background:#EAF4EF;color:#1E6B49;border-left:4px solid var(--exito)}
+  .msg-cliente.nuevo{background:#EAF1F9;color:var(--navy);border-left:4px solid var(--navy-soft)}
+  .error-txt{color:var(--error);font-size:13px;margin-top:5px;display:none}
+
+  /* ===================== PREGUNTAS SI/NO ===================== */
+  .pregunta{
+    background:#fff;border-radius:14px;padding:18px;
+    box-shadow:0 1px 3px rgba(27,37,54,.05),0 8px 24px rgba(27,37,54,.05);
+    margin-bottom:13px;border:1px solid var(--linea);display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  }
+  .pregunta .icono{
+    font-size:21px;flex-shrink:0;width:44px;height:44px;display:flex;align-items:center;justify-content:center;
+    background:var(--fondo);border:1px solid var(--linea);border-radius:11px;
+  }
+  .pregunta .texto{flex:1;min-width:180px;font-size:14.5px;font-weight:600;color:var(--texto)}
+  .toggle{display:flex;gap:8px;flex-shrink:0}
+  .toggle button{
+    padding:11px 22px;font-size:14px;font-weight:700;cursor:pointer;border:2px solid var(--linea);
+    border-radius:10px;background:#fff;color:var(--gris-oscuro);transition:all .18s;min-width:66px;
+  }
+  .toggle button.si.activo{background:var(--navy);border-color:var(--navy);color:#fff}
+  .toggle button.no.activo{background:var(--gris);border-color:var(--gris);color:#fff}
+  .toggle button:not(.activo):hover{border-color:var(--gris-medio)}
+
+  /* ===================== MULTI-OPCIÓN ===================== */
+  .opciones{display:flex;flex-direction:column;gap:8px;width:100%;margin-top:10px}
+  .opciones button{
+    padding:13px 16px;font-size:14px;font-weight:600;cursor:pointer;text-align:left;
+    border:2px solid var(--linea);border-radius:10px;background:#fff;color:var(--texto);transition:all .18s;
+  }
+  .opciones button.activo{background:var(--navy);border-color:var(--navy);color:#fff}
+  .opciones button:not(.activo):hover{border-color:var(--gris-medio)}
+  .pregunta.columna{flex-direction:column;align-items:flex-start}
+  .pregunta.columna .fila{display:flex;align-items:center;gap:14px;width:100%}
+
+  /* ===================== CARD STICKY DE PRECIO ===================== */
+  .precio-sticky{
+    position:sticky;bottom:20px;z-index:50;margin:28px 0 0;
+    background:var(--navy-deep);color:#EAF0F8;border-radius:14px;padding:20px 22px 22px;
+    box-shadow:0 14px 38px rgba(6,25,47,.5);
+    border:1px solid rgba(233,211,160,.28);
+    outline:3px solid var(--navy-deep);outline-offset:-9px; /* doble filete estilo comprobante */
+  }
+  .precio-sticky.pulse{animation:pulse .42s ease}
+  @keyframes pulse{0%{transform:scale(1)}40%{transform:scale(1.02)}100%{transform:scale(1)}}
+  .precio-sticky .encabezado{
+    font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+    color:var(--gold-light);margin-bottom:14px;display:flex;align-items:center;gap:9px;
+    padding-bottom:12px;border-bottom:1px solid rgba(233,211,160,.22);
+  }
+  .precio-sticky .encabezado .rombo{color:var(--gold);font-size:9px}
+  .precio-sticky .lineas{
+    font-size:13.5px;color:#C4D0E0;
+    font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1;
+  }
+  .precio-sticky .linea{display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;gap:16px}
+  /* El nombre completo puede ser largo: que envuelva en vez de desbordar,
+     y que el valor nunca se parta ni se encoja. */
+  .precio-sticky .linea span:first-child{min-width:0;overflow-wrap:anywhere;line-height:1.35}
+  .precio-sticky .linea span:last-child{font-family:var(--mono);font-size:12.5px;color:#DCE4EF;white-space:nowrap;flex-shrink:0}
+  /* "Calculando…" — se distingue de una cifra real: sin monoespaciado, atenuado
+     y con un latido suave, para que nadie lo lea como si fuera su tarifa. */
+  .calculando{font-family:inherit!important;font-style:italic;opacity:.6;animation:latido 1.5s ease-in-out infinite}
+  .precio-sticky .total .val.calculando{font-size:20px}
+  @keyframes latido{0%,100%{opacity:.45}50%{opacity:.85}}
+  @media(prefers-reduced-motion:reduce){ .calculando{animation:none} }
+  .precio-sticky .divisor{border-top:1px solid var(--gold);opacity:.65;margin:12px 0 10px}
+  .precio-sticky .total{display:flex;justify-content:space-between;align-items:baseline;gap:16px}
+  .precio-sticky .total .lbl{font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold-light)}
+  .precio-sticky .total .val{
+    font-family:var(--serif);font-size:30px;font-weight:400;color:var(--gold-light);
+    font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1;white-space:nowrap;
+  }
+
+  /* ===================== CONTRATO CON FORMATO ===================== */
+  .doc-contrato{
+    max-height:440px;overflow-y:auto;border:1px solid var(--linea);border-radius:12px;
+    padding:26px 24px;background:#fff;box-shadow:inset 0 0 0 1px #fff, 0 2px 14px rgba(8,38,78,.06);
+  }
+  /* Dentro del diálogo quien hace scroll es .modal-cuerpo, no el documento */
+  .modal-cuerpo .doc-contrato{max-height:none;border:none;border-radius:0;box-shadow:none;padding:24px 26px}
+  .doc-contrato::-webkit-scrollbar{width:10px}
+  .doc-contrato::-webkit-scrollbar-thumb{background:var(--gold);border-radius:10px;border:2px solid #fff}
+  .doc-titulo{font-family:var(--serif);text-align:center;color:var(--navy);font-size:17px;font-weight:700;line-height:1.35}
+  .doc-sub{text-align:center;color:var(--gris);font-size:12.5px;margin-top:4px}
+  .doc-regla{height:3px;width:70px;margin:14px auto;border-radius:3px;
+    background:linear-gradient(90deg,var(--gold),var(--gold-light))}
+  .doc-partes{display:grid;grid-template-columns:1fr;gap:12px;margin:16px 0}
+  .doc-parte{background:var(--fondo);border-radius:10px;padding:12px 14px;font-size:13px;border-left:3px solid var(--gold)}
+  .doc-parte .rol{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--navy-soft);margin-bottom:3px}
+  .doc-clausula{margin-top:18px}
+  .doc-clausula h4{
+    font-family:var(--serif);font-size:14px;color:var(--navy);margin-bottom:6px;
+    padding-bottom:5px;border-bottom:1px solid var(--linea);
+  }
+  .doc-clausula h4 .num{
+    display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;
+    background:var(--navy);color:var(--gold-light);border-radius:6px;font-size:12px;margin-right:8px;
+  }
+  .doc-clausula p{font-size:13px;color:#2C3646;margin:6px 0}
+  .doc-clausula ul{margin:6px 0 6px 20px;font-size:13px;color:#2C3646}
+  .doc-clausula ul li{margin:3px 0}
+  .doc-destacado{background:var(--gold-pale);border-left:3px solid var(--gold);
+    padding:10px 14px;border-radius:8px;font-size:13px;margin:8px 0}
+  /* Tabla de rentas contratadas dentro del contrato */
+  .doc-tabla{width:100%;border-collapse:collapse;margin:8px 0 4px;font-size:12.5px}
+  .doc-tabla th,.doc-tabla td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--linea)}
+  .doc-tabla th{font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--gris);font-weight:700}
+  .doc-tabla td.num,.doc-tabla th.num{text-align:right;font-family:var(--mono);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .doc-tabla tr.desc td{color:var(--gold);font-weight:600}
+  .doc-tabla tr.total td{border-top:2px solid var(--gold);border-bottom:none;font-weight:700;color:var(--navy);padding-top:9px}
+  .doc-tabla tr.total td.num{font-family:var(--serif);font-size:15px}
+  .doc-firma{margin-top:18px;padding-top:12px;border-top:1px dashed var(--linea);font-size:12px;color:var(--gris)}
+
+  /* ===================== ACEPTACIÓN ===================== */
+  .aceptacion{
+    margin-top:16px;background:linear-gradient(180deg,#fff,#FBFCFE);border-radius:14px;padding:20px;
+    box-shadow:0 2px 14px rgba(8,38,78,.07);border:1px solid #EEF1F6;
+  }
+  .aceptacion label{display:flex;gap:12px;align-items:flex-start;cursor:pointer;font-weight:600;font-size:14.5px;color:var(--navy)}
+  .aceptacion input[type=checkbox]{width:22px;height:22px;flex-shrink:0;margin-top:2px;accent-color:var(--navy);cursor:pointer}
+  .aceptacion ul{list-style:none;margin:12px 0 0 34px;font-size:13.5px;font-weight:400;color:var(--gris-oscuro)}
+  .aceptacion ul li{padding:3px 0}
+  /* Casillas 2 y 3: mismo peso visual, un poco más contenidas */
+  .aceptacion label.acep-extra{margin-top:14px;padding-top:14px;border-top:1px solid #EEF1F6;
+    font-size:13.5px;font-weight:500;color:var(--gris-oscuro);line-height:1.5}
+  .aceptacion label.acep-extra strong{color:var(--navy)}
+
+  /* ===================== BOTONES FINALES ===================== */
+  .botones-finales{display:flex;gap:12px;margin-top:22px;flex-wrap:wrap}
+  .btn{flex:1;min-width:200px;padding:18px;font-size:15px;font-weight:700;cursor:pointer;border:none;border-radius:14px;
+    transition:transform .12s,box-shadow .12s,opacity .2s}
+  .btn:active{transform:scale(.98)}
+  .btn-si{background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--navy);
+    box-shadow:0 6px 20px rgba(196,146,58,.4)}
+  .btn-no{background:#fff;color:var(--gris-oscuro);border:2px solid var(--linea)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+
+  /* ===================== SPINNER ===================== */
+  .spinner{display:inline-block;width:16px;height:16px;border:2.5px solid rgba(8,38,78,.25);
+    border-top-color:var(--navy);border-radius:50%;animation:girar .7s linear infinite;vertical-align:middle;margin-right:8px}
+  @keyframes girar{to{transform:rotate(360deg)}}
+  .loading-inline{color:var(--navy-soft);font-size:13px;margin-top:8px;display:none}
+
+  /* ===================== CONFIRMACIÓN ===================== */
+  #confirmacion{display:none;text-align:center;padding:30px 10px}
+  #confirmacion .check-grande{width:88px;height:88px;margin:0 auto 18px;border-radius:50%;
+    background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--navy);font-size:46px;
+    display:flex;align-items:center;justify-content:center;animation:pop .5s cubic-bezier(.2,1.3,.4,1);
+    box-shadow:0 10px 30px rgba(196,146,58,.4)}
+  #confirmacion.rechazo .check-grande{background:var(--gris);color:#fff;box-shadow:0 10px 30px rgba(89,103,119,.35)}
+  @keyframes pop{0%{transform:scale(0)}100%{transform:scale(1)}}
+  #confirmacion h2{font-family:var(--serif);color:var(--navy);font-size:23px;margin-bottom:14px}
+  #confirmacion .resumen{position:relative;background:#fff;border-radius:14px;padding:22px;text-align:left;max-width:470px;margin:0 auto;
+    box-shadow:0 2px 14px rgba(8,38,78,.08);font-size:14px;border:1px solid var(--linea)}
+  #confirmacion .resumen p{margin:6px 0}
+  #confirmacion .nota{margin-top:16px;font-size:13.5px;color:var(--gris-oscuro)}
+
+  /* Pantalla "Ya completado" */
+  #ya-completado{display:none;text-align:center;padding:30px 10px}
+  #ya-completado .yc-check{width:80px;height:80px;margin:0 auto 16px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-size:40px;color:#fff;
+    background:linear-gradient(135deg,var(--navy-soft),var(--navy));box-shadow:0 10px 30px rgba(8,38,78,.32)}
+  #ya-completado h2{font-family:var(--serif);color:var(--navy);font-size:23px;margin-bottom:14px}
+  #ya-completado .yc-cuerpo{background:#fff;border-radius:14px;padding:22px;text-align:left;max-width:470px;margin:0 auto;
+    border:1px solid var(--linea);box-shadow:0 8px 26px rgba(8,38,78,.08)}
+  #ya-completado .yc-cuerpo p{margin:6px 0}
+  #ya-completado .yc-resumen{background:var(--fondo);border-radius:10px;padding:14px;margin:12px 0}
+  #ya-completado .yc-titulo{font-family:var(--serif);color:var(--navy);font-weight:700;margin-bottom:8px}
+  #ya-completado .linea{display:flex;justify-content:space-between;padding:4px 0;font-variant-numeric:tabular-nums}
+  #ya-completado .linea.total-yc{border-top:2px solid var(--gold);margin-top:6px;padding-top:8px;font-weight:700;color:var(--navy)}
+
+  /* Sello de documento "ACEPTADO" (reemplaza el confeti) */
+  .sello{
+    position:absolute;top:-20px;right:-6px;transform:rotate(-13deg);
+    font-family:var(--serif);text-transform:uppercase;letter-spacing:2.5px;font-size:15px;font-weight:700;
+    color:var(--gold);border:2.5px double var(--gold);border-radius:8px;padding:7px 15px;
+    background:rgba(196,146,58,.06);box-shadow:0 2px 10px rgba(196,146,58,.18);
+    animation:estampar .55s cubic-bezier(.2,1.4,.35,1);
+  }
+  @keyframes estampar{
+    0%{opacity:0;transform:rotate(-13deg) scale(2.6)}
+    55%{opacity:1;transform:rotate(-13deg) scale(.9)}
+    100%{transform:rotate(-13deg) scale(1)}
+  }
+  #banner-error{display:none;background:#FCECEA;color:var(--error);border:1px solid var(--error);
+    border-radius:10px;padding:12px 14px;font-size:14px;margin-top:14px;font-weight:600}
+
+  footer.pie{text-align:center;padding:24px 16px 8px;color:var(--gris-medio);font-size:12px}
+  footer.pie strong{color:var(--navy)}
+
+  body{background:var(--fondo);padding:0;margin:0}
+  .pag{max-width:860px;margin:0 auto;padding:26px 18px 60px}
+  .cab{background:linear-gradient(135deg,#06192F,var(--navy));color:#fff;border-radius:14px;
+       padding:26px;text-align:center;border-bottom:3px solid var(--gold);margin-bottom:20px}
+  .cab h1{margin:0;font-family:var(--serif);font-weight:400;font-size:23px}
+  .cab p{margin:6px 0 0;opacity:.85;font-size:13px}
+  .indice{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px}
+  .indice a{flex:1;min-width:210px;background:#fff;border:1px solid var(--linea);border-radius:12px;
+    padding:13px 16px;text-decoration:none;color:var(--navy);font-weight:700;font-size:13.5px;
+    border-left:4px solid var(--gold)}
+  .indice a:hover{background:var(--gold-pale)}
+  .doc-contrato{max-height:none;margin-bottom:24px;scroll-margin-top:16px}
+  .pie{text-align:center;color:var(--gris);font-size:12.5px;margin-top:26px;line-height:1.6}
+</style>
+<div class="pag">
+  <div class="cab">
+    <h1>Cano Herrera Asesorías SAS</h1>
+    <p>Documentos legales · Declaración de Renta 2026 (Año Gravable 2025)</p>
+  </div>
+
+  <nav class="indice">
+    <a href="#tyc">📄 Términos y Condiciones</a>
+    <a href="#privacidad">🔒 Política de Privacidad</a>
+    <a href="#autorizacion">✍️ Autorización de Datos</a>
+  </nav>
+
+  <div class="doc-contrato" id="tyc">
+    <div class="doc-titulo">TÉRMINOS Y CONDICIONES DEL SERVICIO DE PREPARACIÓN Y PRESENTACIÓN DE DECLARACIONES DE RENTA</div>
+    <div class="doc-sub">Declaración de Renta 2026 · Año Gravable 2025</div>
+    <div class="doc-regla"></div>
+
+    <div class="doc-clausula"><h4><span class="num">1</span>Aceptación</h4>
+      <p>Al seleccionar la casilla <strong>“He leído y acepto los Términos y Condiciones del Servicio”</strong>, el cliente manifiesta que ha leído, comprendido y aceptado íntegramente las presentes condiciones, las cuales constituyen un acuerdo legalmente vinculante entre el cliente y el prestador del servicio, de conformidad con la Ley 527 de 1999, el Decreto 2364 de 2012 y las demás normas aplicables sobre comercio electrónico y firma electrónica en Colombia.</p>
+      <div class="doc-destacado">La aceptación electrónica produce los <strong>mismos efectos jurídicos que una firma manuscrita</strong>.</div></div>
+
+    <div class="doc-clausula"><h4><span class="num">2</span>Partes</h4>
+      <p>Los presentes términos regulan la prestación del servicio entre:</p>
+      <div class="doc-partes">
+        <div class="doc-parte"><div class="rol">El Cliente</div><p style="margin:0">Persona natural que solicita la preparación y presentación de una o más declaraciones de renta. Sus datos quedan registrados en la cotización aceptada y en el correo de confirmación.</p></div>
+        <div class="doc-parte"><div class="rol">El Profesional</div>
+          <strong>JOHANNA CAROLINA CANO</strong>, identificada con C.C. No. 1022421206, actuando en representación de
+          <strong>Cano Herrera Asesorías S.A.S.</strong>, quien presta los servicios tributarios objeto del presente acuerdo.<br>
+          <small style="color:var(--gris)">rentas.chsas@gmail.com</small></div>
+      </div></div>
+
+    <div class="doc-clausula"><h4><span class="num">3</span>Objeto del servicio</h4>
+      <p>El PROFESIONAL prestará el servicio de análisis, preparación y presentación electrónica de la declaración de renta del CLIENTE correspondiente(s) al año gravable contratado, conforme a la legislación tributaria vigente.</p>
+      <p>El servicio podrá incluir, según corresponda:</p>
+      <ul>
+        <li>Análisis de ingresos, patrimonio, activos, pasivos, costos, deducciones y demás información tributaria.</li>
+        <li>Elaboración del formulario oficial exigido por la DIAN.</li>
+        <li>Presentación electrónica de la declaración dentro de los plazos legales, siempre que el cliente haya cumplido oportunamente con sus obligaciones.</li>
+        <li>Entrega de la declaración presentada y del respectivo documento de apoyo o ayuda renta.</li>
+        <li>Atención de inquietudes relacionadas exclusivamente con la declaración elaborada.</li>
+      </ul></div>
+
+    <div class="doc-clausula"><h4><span class="num">4</span>Obligaciones del cliente</h4>
+      <p>El CLIENTE se compromete a:</p>
+      <p>a. Entregar la totalidad de los documentos requeridos con una anticipación mínima de <strong>una (1) semana</strong> respecto de la fecha de análisis o elaboración previamente acordada.</p>
+      <p>b. Suministrar información veraz, completa, actualizada y auténtica.</p>
+      <p>c. Informar inmediatamente cualquier corrección, modificación o información adicional que pueda afectar la declaración tributaria.</p>
+      <p>d. Atender las solicitudes de información realizadas por el PROFESIONAL dentro de un plazo máximo de cuarenta y ocho (48) horas.</p>
+      <p>e. Revisar la información contenida en la declaración antes de su presentación cuando sea requerida su validación.</p>
+      <p>f. Pagar el valor del servicio en las condiciones previamente informadas.</p></div>
+
+    <div class="doc-clausula"><h4><span class="num">5</span>Obligaciones del profesional</h4>
+      <p>El PROFESIONAL se compromete a:</p>
+      <ul>
+        <li>Analizar diligentemente la documentación suministrada.</li>
+        <li>Elaborar la declaración conforme a la normatividad tributaria vigente.</li>
+        <li>Presentar la declaración electrónicamente dentro del calendario tributario aplicable, siempre que el cliente haya entregado oportunamente toda la información requerida.</li>
+        <li>Remitir al cliente los documentos correspondientes a la declaración presentada.</li>
+        <li>Mantener absoluta reserva y confidencialidad sobre toda la información recibida.</li>
+        <li>Proteger los datos personales conforme a la Política de Privacidad y la legislación colombiana.</li>
+      </ul></div>
+
+    <div class="doc-clausula"><h4><span class="num">6</span>Valor del servicio</h4>
+      <p>El valor del servicio será el informado al cliente durante el proceso de contratación.</p>
+      <div class="doc-destacado">El <strong>valor del servicio</strong> y el detalle por declarante son los de tu cotización: los encuentras en el correo de confirmación que recibiste.</div>
+      <p>Cuando el cliente contrate varias declaraciones de renta, podrán aplicarse descuentos comerciales que serán reflejados antes de realizar el pago.</p>
+      
+      <p>Al aceptar estos términos, el CLIENTE manifiesta conocer y aceptar el valor total cotizado para el servicio contratado.</p></div>
+
+    <div class="doc-clausula"><h4><span class="num">7</span>Entrega extemporánea de documentos</h4>
+      <p>Cuando el CLIENTE entregue la documentación fuera del plazo mínimo establecido de una (1) semana antes de la fecha acordada para el análisis, el PROFESIONAL podrá:</p>
+      <ul>
+        <li>Reprogramar la prestación del servicio según disponibilidad.</li>
+        <li>Aplicar un cargo adicional por gestión extemporánea de <strong>SETENTA MIL PESOS ($70.000 COP)</strong> por cada proceso afectado.</li>
+        <li>Informar que no puede garantizar la presentación dentro de los plazos establecidos por la DIAN.</li>
+      </ul></div>
+
+    <div class="doc-clausula"><h4><span class="num">8</span>Responsabilidad del cliente</h4>
+      <p>El CLIENTE reconoce que toda la información suministrada constituye la base para la elaboración de la declaración tributaria.</p>
+      <p>En consecuencia, será responsable por:</p>
+      <ul>
+        <li>La autenticidad de los documentos entregados.</li>
+        <li>La veracidad de la información suministrada.</li>
+        <li>La omisión de ingresos, activos, patrimonio o cualquier otro dato relevante.</li>
+        <li>La entrega tardía de documentos.</li>
+        <li>Las consecuencias tributarias derivadas de información falsa, incompleta, inexacta o extemporánea.</li>
+      </ul></div>
+
+    <div class="doc-clausula"><h4><span class="num">9</span>Responsabilidad del profesional</h4>
+      <p>El PROFESIONAL será responsable exclusivamente de:</p>
+      <ul>
+        <li>Aplicar correctamente la normatividad tributaria vigente.</li>
+        <li>Realizar adecuadamente los cálculos derivados de la información suministrada.</li>
+        <li>Presentar electrónicamente la declaración cuando el cliente haya cumplido oportunamente con todas sus obligaciones.</li>
+      </ul>
+      <p>El PROFESIONAL no será responsable por sanciones, intereses, requerimientos o actuaciones administrativas originadas en información incorrecta, falsa, incompleta o entregada fuera del tiempo establecido por el CLIENTE.</p></div>
+
+    <div class="doc-clausula"><h4><span class="num">10</span>Multas y sanciones tributarias</h4>
+      <p>Cuando la DIAN imponga sanciones relacionadas con la declaración presentada, la responsabilidad se determinará de acuerdo con la causa que las origine.</p>
+      <p>Serán asumidas por el <strong>CLIENTE</strong> cuando se deriven de:</p>
+      <ul>
+        <li>Información falsa.</li>
+        <li>Información incompleta.</li>
+        <li>Documentación alterada.</li>
+        <li>Omisión de información relevante.</li>
+        <li>Entrega extemporánea de documentos.</li>
+        <li>Cualquier incumplimiento atribuible al CLIENTE.</li>
+      </ul>
+      <p>Serán asumidas por el <strong>PROFESIONAL</strong> únicamente cuando se demuestre que obedecen exclusivamente a errores de cálculo, elaboración o presentación imputables al mismo.</p></div>
+
+    <div class="doc-clausula"><h4><span class="num">11</span>Confidencialidad</h4>
+      <p>Toda la información suministrada por el CLIENTE tendrá carácter confidencial y será utilizada únicamente para la prestación del servicio contratado y para el cumplimiento de obligaciones legales.</p>
+      <p>El tratamiento de los datos personales se realizará conforme a la Política de Privacidad y a la autorización otorgada por el titular.</p></div>
+
+    <div class="doc-clausula"><h4><span class="num">12</span>Comunicaciones</h4>
+      <p>El CLIENTE autoriza que todas las comunicaciones relacionadas con el servicio puedan realizarse mediante correo electrónico, llamada telefónica, mensajes de texto, WhatsApp u otros medios electrónicos suministrados durante el proceso de contratación.</p>
+      <p>Toda comunicación enviada a dichos medios se entenderá válidamente notificada.</p></div>
+
+    <div class="doc-clausula"><h4><span class="num">13</span>Fuerza mayor</h4>
+      <p>El PROFESIONAL no será responsable por retrasos ocasionados por eventos de fuerza mayor o caso fortuito, incluyendo fallas de la plataforma de la DIAN, interrupciones de servicios tecnológicos, desastres naturales, actos de autoridad o cualquier circunstancia ajena a su control.</p></div>
+
+    <div class="doc-clausula"><h4><span class="num">14</span>Modificaciones</h4>
+      <p>El PROFESIONAL podrá actualizar estos Términos y Condiciones cuando sea necesario por cambios legales, tributarios, tecnológicos o administrativos.</p>
+      <p>Las nuevas versiones serán publicadas en la plataforma y aplicarán para las contrataciones realizadas con posterioridad a su publicación.</p></div>
+
+    <div class="doc-clausula"><h4><span class="num">15</span>Legislación aplicable</h4>
+      <p>Los presentes Términos y Condiciones se rigen por las leyes de la República de Colombia.</p>
+      <p>Cualquier controversia será resuelta conforme a la legislación colombiana vigente.</p></div>
+
+    <div class="doc-clausula"><h4><span class="num">16</span>Aceptación electrónica</h4>
+      <p>Al seleccionar la casilla <strong>“He leído y acepto los Términos y Condiciones del Servicio”</strong>, el CLIENTE declara que:</p>
+      <ul>
+        <li>Ha leído íntegramente este documento.</li>
+        <li>Comprende el alcance del servicio contratado.</li>
+        <li>Acepta todas las obligaciones aquí establecidas.</li>
+        <li>Autoriza la preparación y, cuando corresponda, la presentación electrónica de su declaración de renta ante la DIAN.</li>
+        <li>Acepta el valor total cotizado del servicio.</li>
+        <li>Reconoce el cargo adicional por gestión extemporánea cuando aplique.</li>
+        <li>Entiende que la declaración será elaborada con base exclusivamente en la información suministrada por él.</li>
+      </ul>
+      <div class="doc-destacado">La plataforma registrará automáticamente la <strong>fecha, la hora, la dirección IP</strong> y demás evidencias electrónicas de la aceptación, las cuales constituirán prueba del consentimiento otorgado.</div></div>
+
+    <div class="doc-firma">Cano Herrera Asesorías S.A.S. · rentas.chsas@gmail.com</div></div>
+  <div class="doc-contrato" id="privacidad">
+          <div class="doc-titulo">POLÍTICA DE PRIVACIDAD Y TRATAMIENTO DE DATOS PERSONALES</div>
+          <div class="doc-sub">Ley 1581 de 2012 · Decreto 1074 de 2015</div>
+          <div class="doc-regla"></div>
+
+          <div class="doc-clausula"><h4><span class="num">1</span>Objetivo</h4>
+            <p>La presente Política de Privacidad tiene como finalidad informar a los usuarios sobre la forma en que se recolectan, almacenan, utilizan, administran, protegen y, cuando corresponda, eliminan los datos personales suministrados para la prestación de los servicios de asesoría, elaboración y presentación de declaraciones tributarias ante la Dirección de Impuestos y Aduanas Nacionales (DIAN).</p>
+            <p>El tratamiento de la información se realizará de conformidad con la Constitución Política de Colombia, la Ley 1581 de 2012, el Decreto 1074 de 2015 y las demás normas que las modifiquen, adicionen o sustituyan.</p></div>
+
+          <div class="doc-clausula"><h4><span class="num">2</span>Responsable del tratamiento</h4>
+            <p>El responsable del tratamiento de los datos personales es el prestador del servicio identificado en la presente plataforma, quien actuará como responsable de la información suministrada por el cliente.</p>
+            <div class="doc-destacado"><strong>Cano Herrera Asesorías SAS</strong><br>
+              Canal de atención al titular: <strong>rentas.chsas@gmail.com</strong></div></div>
+
+          <div class="doc-clausula"><h4><span class="num">3</span>Datos personales que se recolectan</h4>
+            <p>Para la adecuada prestación del servicio podrán solicitarse, entre otros, los siguientes datos:</p>
+            <ul>
+              <li>Nombre completo.</li>
+              <li>Tipo y número de documento de identidad.</li>
+              <li>Fecha de nacimiento.</li>
+              <li>Dirección de residencia.</li>
+              <li>Ciudad y departamento.</li>
+              <li>Número de teléfono.</li>
+              <li>Correo electrónico.</li>
+              <li>Información tributaria y financiera.</li>
+              <li>Certificados de ingresos y retenciones.</li>
+              <li>Extractos bancarios.</li>
+              <li>Certificados laborales.</li>
+              <li>Información patrimonial.</li>
+              <li>Documentos soporte requeridos por la DIAN.</li>
+              <li>Cualquier otra información necesaria para la correcta elaboración de la declaración tributaria.</li>
+            </ul></div>
+
+          <div class="doc-clausula"><h4><span class="num">4</span>Finalidad del tratamiento</h4>
+            <p>Los datos personales serán utilizados únicamente para las siguientes finalidades:</p>
+            <ul>
+              <li>Identificar plenamente al cliente.</li>
+              <li>Elaborar la declaración tributaria correspondiente.</li>
+              <li>Preparar y presentar declaraciones ante la DIAN cuando exista autorización del titular.</li>
+              <li>Verificar la información suministrada.</li>
+              <li>Contactar al cliente para solicitar documentación adicional.</li>
+              <li>Atender consultas, solicitudes o requerimientos.</li>
+              <li>Generar cotizaciones, facturas y comprobantes de pago.</li>
+              <li>Cumplir obligaciones legales, tributarias y contables.</li>
+              <li>Conservar soportes relacionados con el servicio prestado.</li>
+              <li>Gestionar procesos administrativos derivados de la relación contractual.</li>
+            </ul>
+            <p>En ningún caso la información será utilizada para fines diferentes sin autorización del titular, salvo las excepciones previstas por la ley.</p></div>
+
+          <div class="doc-clausula"><h4><span class="num">5</span>Confidencialidad</h4>
+            <p>Toda la información suministrada será tratada con estricta confidencialidad.</p>
+            <p>El responsable implementará medidas administrativas, técnicas y organizacionales razonables para proteger los datos personales contra pérdida, alteración, acceso no autorizado, divulgación indebida o cualquier tratamiento contrario a la ley.</p></div>
+
+          <div class="doc-clausula"><h4><span class="num">6</span>Compartición de la información</h4>
+            <p>Los datos personales únicamente podrán ser compartidos:</p>
+            <ul>
+              <li>Con la DIAN, cuando sea necesario para la presentación de obligaciones tributarias autorizadas por el titular.</li>
+              <li>Con autoridades judiciales o administrativas cuando exista obligación legal.</li>
+              <li>Con proveedores tecnológicos que intervengan en la prestación del servicio y que estén sujetos a obligaciones de confidencialidad.</li>
+            </ul>
+            <div class="doc-destacado">Los datos personales <strong>no serán vendidos, comercializados, cedidos ni utilizados para fines publicitarios</strong> sin autorización expresa del titular.</div></div>
+
+          <div class="doc-clausula"><h4><span class="num">7</span>Conservación de la información</h4>
+            <p>La información será conservada durante el tiempo necesario para cumplir las finalidades descritas en esta política, atender obligaciones legales, tributarias, contables y resolver posibles reclamaciones.</p>
+            <p>Finalizado dicho término, los datos podrán ser eliminados o anonimizados conforme a la legislación vigente.</p></div>
+
+          <div class="doc-clausula"><h4><span class="num">8</span>Derechos del titular</h4>
+            <p>El titular de los datos personales tiene derecho a:</p>
+            <ul>
+              <li>Conocer los datos personales que reposan en nuestras bases de datos.</li>
+              <li>Solicitar la actualización o corrección de información inexacta.</li>
+              <li>Solicitar la eliminación de los datos cuando sea procedente.</li>
+              <li>Revocar la autorización otorgada, salvo cuando exista un deber legal o contractual que impida dicha revocatoria.</li>
+              <li>Presentar consultas o reclamaciones relacionadas con el tratamiento de sus datos.</li>
+              <li>Acceder gratuitamente a la información objeto de tratamiento.</li>
+            </ul></div>
+
+          <div class="doc-clausula"><h4><span class="num">9</span>Responsabilidad sobre la información</h4>
+            <p>El titular declara que la información suministrada es veraz, completa y actualizada.</p>
+            <p>El responsable del tratamiento no será responsable por errores, omisiones, inconsistencias o consecuencias derivadas de información falsa, incompleta, desactualizada o entregada extemporáneamente por el cliente.</p></div>
+
+          <div class="doc-clausula"><h4><span class="num">10</span>Seguridad de la información</h4>
+            <p>Se adoptarán medidas de seguridad razonables para proteger la información personal; sin embargo, ningún sistema tecnológico puede garantizar una seguridad absoluta.</p>
+            <p>En caso de presentarse incidentes de seguridad que puedan afectar los datos personales, se adoptarán las medidas previstas por la legislación aplicable.</p></div>
+
+          <div class="doc-clausula"><h4><span class="num">11</span>Modificaciones de la política</h4>
+            <p>La presente Política de Privacidad podrá ser modificada cuando sea necesario para cumplir cambios legales, regulatorios o mejoras en la prestación del servicio.</p>
+            <p>Las modificaciones entrarán en vigencia desde su publicación en la plataforma o desde la fecha indicada en la actualización correspondiente.</p></div>
+
+          <div class="doc-clausula"><h4><span class="num">12</span>Aceptación</h4>
+            <p>Al marcar la casilla correspondiente y continuar con el proceso de contratación, el titular manifiesta que ha leído, comprendido y acepta íntegramente la presente Política de Privacidad, autorizando el tratamiento de sus datos personales para las finalidades aquí establecidas.</p></div>
+        </div>
+  <div class="doc-contrato" id="autorizacion">
+          <div class="doc-titulo">AUTORIZACIÓN PARA EL TRATAMIENTO DE DATOS PERSONALES</div>
+          <div class="doc-sub">Autorización previa, expresa, libre, voluntaria e informada</div>
+          <div class="doc-regla"></div>
+
+          <div class="doc-clausula">
+            <p>En cumplimiento de la Ley 1581 de 2012, el Decreto 1074 de 2015 y las demás normas que regulan la protección de datos personales en Colombia, autorizo de manera previa, expresa, libre, voluntaria e informada al responsable del tratamiento de datos personales para recolectar, almacenar, organizar, consultar, actualizar, conservar, utilizar, transmitir, transferir, suprimir y, en general, realizar el tratamiento de mis datos personales, de conformidad con la Política de Privacidad y Tratamiento de Datos Personales publicada en la plataforma.</p>
+            <p>La presente autorización comprende el tratamiento de la información personal, tributaria, financiera y documental que suministre durante la prestación del servicio, incluyendo, entre otros:</p>
+            <ul>
+              <li>Datos de identificación personal.</li>
+              <li>Información de contacto.</li>
+              <li>Información tributaria y financiera.</li>
+              <li>Certificados, extractos, declaraciones, soportes y demás documentos requeridos para la elaboración de obligaciones tributarias.</li>
+              <li>Información patrimonial, laboral, comercial o cualquier otra necesaria para la correcta prestación del servicio.</li>
+            </ul></div>
+
+          <div class="doc-clausula"><h4>Finalidades autorizadas</h4>
+            <p>Autorizo expresamente que dicha información sea utilizada para las siguientes finalidades:</p>
+            <ul>
+              <li>Verificar mi identidad.</li>
+              <li>Analizar la información suministrada.</li>
+              <li>Elaborar mi declaración de renta u otras obligaciones tributarias.</li>
+              <li>Preparar y presentar declaraciones ante la Dirección de Impuestos y Aduanas Nacionales (DIAN), cuando exista mi autorización para ello.</li>
+              <li>Generar formularios, anexos, reportes y documentos relacionados con el servicio contratado.</li>
+              <li>Solicitar información adicional cuando sea necesaria para el cumplimiento de las obligaciones tributarias.</li>
+              <li>Contactarme por correo electrónico, llamada telefónica, mensajes de texto, WhatsApp u otros medios electrónicos para atender asuntos relacionados con el servicio.</li>
+              <li>Emitir facturas, comprobantes de pago y demás documentos administrativos.</li>
+              <li>Cumplir obligaciones legales, tributarias, contables y regulatorias.</li>
+              <li>Atender requerimientos formulados por autoridades competentes.</li>
+              <li>Conservar los soportes documentales durante los términos establecidos por la legislación aplicable.</li>
+              <li>Implementar controles internos de calidad, auditoría, seguridad de la información y prevención del fraude.</li>
+            </ul></div>
+
+          <div class="doc-clausula"><h4>Declaración de veracidad</h4>
+            <p>Declaro que toda la información y documentación suministrada por mí es veraz, completa, auténtica y corresponde a la realidad, asumiendo la responsabilidad exclusiva por cualquier error, omisión, falsedad, inconsistencia o entrega extemporánea de la información proporcionada.</p>
+            <p>Entiendo que el responsable del tratamiento elaborará y, cuando corresponda, presentará mi declaración tributaria con fundamento exclusivo en la información suministrada por mí, razón por la cual exonero al responsable de cualquier responsabilidad derivada de información falsa, incompleta, inexacta, alterada o entregada fuera de los plazos establecidos.</p></div>
+
+          <div class="doc-clausula"><h4>Transmisión de la información</h4>
+            <p>Autorizo que mis datos personales sean transmitidos o compartidos únicamente cuando ello sea necesario para la correcta ejecución del servicio, incluyendo la DIAN, autoridades administrativas o judiciales competentes, proveedores tecnológicos que intervengan en la operación de la plataforma y demás terceros que deban participar por obligación legal o contractual, quienes estarán sujetos a deberes de confidencialidad y protección de la información.</p>
+            <p>Reconozco que mis datos personales serán tratados bajo estrictas medidas de seguridad técnicas, administrativas y organizacionales orientadas a proteger su confidencialidad, integridad y disponibilidad.</p></div>
+
+          <div class="doc-clausula"><h4>Derechos y vigencia</h4>
+            <p>Conozco que, como titular de los datos personales, puedo ejercer en cualquier momento los derechos de conocer, actualizar, rectificar, corregir, solicitar la supresión de mis datos cuando sea legalmente procedente, revocar la presente autorización en los casos permitidos por la ley, presentar consultas o reclamaciones y acceder gratuitamente a la información objeto de tratamiento, utilizando los canales de atención definidos por el responsable.</p>
+            <p>La presente autorización permanecerá vigente durante el tiempo necesario para cumplir las finalidades aquí descritas y por el término adicional que exijan las normas tributarias, contables, comerciales o cualquier otra disposición legal aplicable.</p>
+            <div class="doc-destacado">Al seleccionar la casilla <strong>“Autorizo el Tratamiento de mis Datos Personales”</strong>, manifiesto que he leído, comprendido y aceptado íntegramente el contenido de esta autorización y otorgo mi consentimiento de manera libre, expresa e informada para el tratamiento de mis datos personales conforme a las condiciones aquí establecidas.</div></div>
+        </div>
+
+  <p class="pie">
+    Estos son los documentos vigentes publicados en la plataforma.<br>
+    ¿Dudas? Escríbenos a <strong>rentas.chsas@gmail.com</strong>
+  </p>
+</div>
